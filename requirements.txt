@@ -1,9 +1,41 @@
-arxiv
-requests
-pymupdf
-fastapi
+fastapi>=0.100,<1
 uvicorn
 python-dotenv
-pydantic
-langchain-text-splitters
+
+
+# Data fetching
+arxiv
+requests
+tenacity
+
+# PDF extraction
+PyMuPDF
+
+# Text processing
+langchain
+langchain-community
+langchain-openai
+
+# Vector databases
+chromadb
+faiss-cpu
+
+
+# Sparse retrieval
+rank_bm25
+
+# LangGraph
+langgraph
+
+# Evaluation
+ragas
+datasets
+
+# UI
+streamlit
+
+
+# Testing
 pytest
+pytest-mock
+
