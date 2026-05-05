@@ -1,8 +1,12 @@
 fastapi>=0.100,<1
 uvicorn
 python-dotenv
+<<<<<<< chore/update-requirements
 pydantic>=2.0,<3
 pydantic-settings>=2.0,<3
+=======
+pydantic
+>>>>>>> feature/project-setup
 
 # Data fetching
 arxiv
@@ -16,13 +20,19 @@ PyMuPDF
 langchain
 langchain-community
 langchain-openai
+<<<<<<< chore/update-requirements
 langchain-text-splitters
 sentence-transformers
+=======
+>>>>>>> feature/project-setup
 
 # Vector databases
 chromadb
 faiss-cpu
+<<<<<<< chore/update-requirements
 numpy
+=======
+>>>>>>> feature/project-setup
 
 # Sparse retrieval
 rank_bm25
@@ -36,8 +46,11 @@ datasets
 
 # UI
 streamlit
+<<<<<<< chore/update-requirements
 rich<14
 plotly
+=======
+>>>>>>> feature/project-setup
 
 # Testing
 pytest
