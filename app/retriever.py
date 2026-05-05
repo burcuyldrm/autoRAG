@@ -18,10 +18,4 @@ class VectorRetriever:
             score = cosine_similarity(query_embedding, emb)
             scores.append((score, self.chunks[i]))
 
-        # skora göre sırala (büyükten küçüğe)
-        scores.sort(key=lambda x: x[0], reverse=True)
 
-        # sadece chunkları döndür
-        top_k = [chunk for _, chunk in scores[:k]]
-
-        return top_k
