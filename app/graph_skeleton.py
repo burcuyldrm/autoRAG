@@ -120,3 +120,13 @@ def create_initial_state(query: str) -> GraphState:
         "confidence": 1.0,
         "iteration": 0,
     }
+def rewrite_node(state: GraphState) -> GraphState:
+    query = state.get("query", "")
+
+    # basit iyileştirme (şimdilik)
+    improved_query = query + " detailed explanation"
+
+    state["rewritten_query"] = improved_query
+    state["iteration"] = state.get("iteration", 0) + 1
+
+    return state
