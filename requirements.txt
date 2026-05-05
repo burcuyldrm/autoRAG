@@ -1,3 +1,6 @@
+arxiv
+requests
+pymupdf
 fastapi
 uvicorn
 python-dotenv
