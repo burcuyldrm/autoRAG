@@ -1,4 +1,3 @@
-from typing import Dict, Any
 
 
 
@@ -6,15 +5,11 @@ from typing import Dict, Any
 
 def retrieve_node(state: GraphState) -> GraphState:
 
+
     return state
 
 
 def grade_node(state: GraphState) -> GraphState:
-
-    return state
-
-
-def rewrite_node(state: GraphState) -> GraphState:
 
     return state
 
@@ -37,8 +32,7 @@ class StateGraph:
     def run(self, state: GraphState) -> GraphState:
         state = self.nodes["retrieve"](state)
         state = self.nodes["grade"](state)
-        state = self.nodes["rewrite"](state)
-        state = self.nodes["generate"](state)
+
         return state
 
 
