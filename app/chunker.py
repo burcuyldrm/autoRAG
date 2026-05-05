@@ -10,10 +10,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 class ChunkerConfig:
 
 
+
 class Chunk(TypedDict):
     id: str
     text: str
     metadata: Dict[str, Any]
+
 
 
 
@@ -48,4 +50,4 @@ def create_chunks(
 
             all_chunks.append(chunk)
 
-    return all_chunks
+
