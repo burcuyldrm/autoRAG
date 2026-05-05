@@ -5,3 +5,5 @@ fastapi
 uvicorn
 python-dotenv
 pydantic
+langchain-text-splitters
+pytest
