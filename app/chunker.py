@@ -1,5 +1,6 @@
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass
+
 import uuid
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -7,8 +8,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 @dataclass
 class ChunkerConfig:
-    CHUNK_SIZE: int = 512
-    OVERLAP: int = 50
 
 
 class Chunk(TypedDict):
@@ -17,10 +16,7 @@ class Chunk(TypedDict):
     metadata: Dict[str, Any]
 
 
-def split_text(text: str, config: ChunkerConfig = ChunkerConfig()) -> List[str]:
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=config.CHUNK_SIZE,
-        chunk_overlap=config.OVERLAP,
+
         separators=["\n\n", "\n", ". ", " ", ""],
     )
 
@@ -46,6 +42,7 @@ def create_chunks(
                     "page": page_data.get("page"),
                     "source_url": page_data.get("source_url"),
                     "source_file": page_data.get("source_file"),
+
                 },
             }
 
