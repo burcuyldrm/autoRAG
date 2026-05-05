@@ -1,9 +1,57 @@
-arxiv
-requests
-pymupdf
-fastapi
+fastapi>=0.100,<1
 uvicorn
 python-dotenv
+<<<<<<< chore/update-requirements
+pydantic>=2.0,<3
+pydantic-settings>=2.0,<3
+=======
 pydantic
+>>>>>>> feature/project-setup
+
+# Data fetching
+arxiv
+requests
+tenacity
+
+# PDF extraction
+PyMuPDF
+
+# Text processing
+langchain
+langchain-community
+langchain-openai
+<<<<<<< chore/update-requirements
 langchain-text-splitters
+sentence-transformers
+=======
+>>>>>>> feature/project-setup
+
+# Vector databases
+chromadb
+faiss-cpu
+<<<<<<< chore/update-requirements
+numpy
+=======
+>>>>>>> feature/project-setup
+
+# Sparse retrieval
+rank_bm25
+
+# LangGraph
+langgraph
+
+# Evaluation
+ragas
+datasets
+
+# UI
+streamlit
+<<<<<<< chore/update-requirements
+rich<14
+plotly
+=======
+>>>>>>> feature/project-setup
+
+# Testing
 pytest
+pytest-mock
