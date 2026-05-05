@@ -1,26 +1,26 @@
 from typing import Dict, Any
-from app.schemas import GraphState
+
 
 
 # -------- NODELAR --------
 
 def retrieve_node(state: GraphState) -> GraphState:
-    # TODO: gerçek retriever eklenecek
+
     return state
 
 
 def grade_node(state: GraphState) -> GraphState:
-    # TODO: LLM ile relevance/faithfulness kontrolü
+
     return state
 
 
 def rewrite_node(state: GraphState) -> GraphState:
-    # TODO: query rewrite
+
     return state
 
 
 def generate_node(state: GraphState) -> GraphState:
-    # TODO: final answer üretimi
+
     state["answer"] = "placeholder answer"
     return state
 
@@ -62,4 +62,5 @@ def create_initial_state(query: str) -> GraphState:
         "retrieved_chunks": [],
         "graded_chunks": [],
         "answer": "",
+
     }
