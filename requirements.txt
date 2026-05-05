@@ -1,7 +1,7 @@
 arxiv
+requests
+pymupdf
 fastapi
 uvicorn
 python-dotenv
 pydantic
-pymupdf
-requests
