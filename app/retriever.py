@@ -18,3 +18,4 @@ class VectorRetriever:
             score = cosine_similarity(query_embedding, emb)
             scores.append((score, self.chunks[i]))
 
+

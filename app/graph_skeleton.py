@@ -6,6 +6,7 @@
 def retrieve_node(state: GraphState) -> GraphState:
 
 
+
     return state
 
 
@@ -33,6 +34,7 @@ class StateGraph:
         state = self.nodes["retrieve"](state)
         state = self.nodes["grade"](state)
 
+
         return state
 
 
@@ -57,4 +59,3 @@ def create_initial_state(query: str) -> GraphState:
         "graded_chunks": [],
         "answer": "",
 
-    }
