@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-05-06T10:00:00",
+  "n_questions": 10,
+  "retrieval_mode": "dense",
+  "standard_rag": {
+    "faithfulness": 0.72,
+    "answer_relevancy": 0.68,
+    "context_precision": 0.65
+  },
+  "auto_rag": {
+    "faithfulness": 0.81,
+    "answer_relevancy": 0.79,
+    "context_precision": 0.74
+  }
+}

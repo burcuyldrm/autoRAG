@@ -1,5 +1,5 @@
 from typing import TypedDict, List, Dict, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import uuid
 
@@ -8,7 +8,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 @dataclass
 class ChunkerConfig:
-
+    chunk_size: int = 512
+    chunk_overlap: int = 50
+    separators: List[str] = field(default_factory=lambda: ["\n\n", "\n", ". ", " ", ""])
 
 
 class Chunk(TypedDict):
@@ -17,18 +19,23 @@ class Chunk(TypedDict):
     metadata: Dict[str, Any]
 
 
-
-
-        separators=["\n\n", "\n", ". ", " ", ""],
+def split_text(text: str, config: ChunkerConfig = None) -> List[str]:
+    if config is None:
+        config = ChunkerConfig()
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=config.chunk_size,
+        chunk_overlap=config.chunk_overlap,
+        separators=config.separators,
     )
-
     return splitter.split_text(text)
 
 
 def create_chunks(
     pages: List[Dict[str, Any]],
-    config: ChunkerConfig = ChunkerConfig()
+    config: ChunkerConfig = None,
 ) -> List[Chunk]:
+    if config is None:
+        config = ChunkerConfig()
     all_chunks: List[Chunk] = []
 
     for page_data in pages:
@@ -44,10 +51,8 @@ def create_chunks(
                     "page": page_data.get("page"),
                     "source_url": page_data.get("source_url"),
                     "source_file": page_data.get("source_file"),
-
                 },
             }
-
             all_chunks.append(chunk)
 
-
+    return all_chunks

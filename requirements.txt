@@ -15,11 +15,15 @@ PyMuPDF
 langchain
 langchain-community
 langchain-openai
+langchain-google-genai
+langchain-text-splitters
 
 # Vector databases
 chromadb
 faiss-cpu
 
+# Embeddings
+sentence-transformers
 
 # Sparse retrieval
 rank_bm25
@@ -33,9 +37,8 @@ datasets
 
 # UI
 streamlit
-
+plotly
 
 # Testing
 pytest
 pytest-mock
-
