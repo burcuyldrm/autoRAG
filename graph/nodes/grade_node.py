@@ -2,28 +2,43 @@ from __future__ import annotations
 
 import json
 import logging
-import os
+import re
 
 from graph.state import GraphState, GradeResult
 
 logger = logging.getLogger(__name__)
 
 _GRADE_PROMPT = """\
-You are a relevance grader. Given the user's question and a set of retrieved document chunks, \
-decide whether the chunks contain information that is relevant to answering the question.
+You are a relevance grader. Given the user's question and retrieved document chunks, \
+decide if the chunks contain information relevant to answering the question.
 
 Question: {query}
 
 Retrieved chunks:
 {chunks}
 
-Respond ONLY with valid JSON in this exact format:
-{{"relevant": true/false, "confidence": 0.0-1.0, "reasoning": "one sentence explanation"}}
+Reply with ONLY a JSON object — no markdown, no explanation outside the JSON:
+{{"relevant": true, "confidence": 0.85, "reasoning": "one sentence"}}
 """
 
 
+def _extract_json(text: str) -> dict:
+    """Strip <think> tags and extract the first JSON object from LLM output."""
+    # Remove DeepSeek-R1 style <think>...</think> blocks
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    # Find first {...} block
+    m = re.search(r"\{[^{}]+\}", text, re.DOTALL)
+    if m:
+        return json.loads(m.group())
+    raise ValueError(f"No JSON found in: {text[:200]!r}")
+
+
 def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
-    """LangGraph node: grades retrieved chunks for relevance."""
     query = state.get("query", "")
     chunks = state.get("chunks", [])
 
@@ -34,7 +49,7 @@ def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
         return state
 
     chunk_texts = "\n\n".join(
-        f"[{i+1}] {c.get('text', '')}" for i, c in enumerate(chunks[:5])
+        f"[{i+1}] {c.get('text', '')[:300]}" for i, c in enumerate(chunks[:5])
     )
     prompt = _GRADE_PROMPT.format(query=query, chunks=chunk_texts)
 
@@ -44,16 +59,18 @@ def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
     try:
         response = llm.invoke(prompt)
         content = response.content if hasattr(response, "content") else str(response)
-        result = json.loads(content.strip())
+        result = _extract_json(content)
         state["grade_result"] = GradeResult(
-            relevant=bool(result.get("relevant", False)),
-            confidence=float(result.get("confidence", 0.0)),
+            relevant=bool(result.get("relevant", True)),
+            confidence=float(result.get("confidence", 0.5)),
             reasoning=str(result.get("reasoning", "")),
         )
-    except (json.JSONDecodeError, Exception) as exc:
-        logger.error("grade_node LLM error: %s", exc)
+    except Exception as exc:
+        logger.error("grade_node error: %s", exc)
+        # default to relevant so pipeline continues
         state["grade_result"] = GradeResult(
-            relevant=False, confidence=0.0, reasoning=f"Grading failed: {exc}"
+            relevant=True, confidence=0.5,
+            reasoning="Grading skipped — chunks assumed relevant."
         )
     return state
 

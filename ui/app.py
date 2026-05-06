@@ -109,13 +109,14 @@ section[data-testid="stSidebar"] {
 }
 .abox.empty { color:#94a3b8; font-style:italic; }
 
-/* ── source chips ── */
-.chip {
-    display:inline-block;
-    background:#f1f5f9; border:1px solid #e2e8f0;
-    border-radius:6px; padding:5px 10px;
-    margin:3px 3px 3px 0; font-size:11px; color:#475569;
+/* ── source cards ── */
+.src-card {
+    background:#f8fafc; border:1px solid #e2e8f0;
+    border-radius:8px; padding:10px 12px;
+    margin:6px 0; font-size:12px;
 }
+.src-head { font-weight:600; color:#2563eb; margin-bottom:3px; }
+.src-body { color:#64748b; line-height:1.5; }
 
 /* ── info cards ── */
 .icard {
@@ -157,6 +158,33 @@ def scard(icon: str, title: str, body: str, state: str) -> str:
 
 def badge(text: str, kind: str) -> str:
     return f'<span class="badge {kind}">{text}</span>'
+
+
+def _source_label(s: dict) -> str:
+    """Build a human-readable label for a source chunk."""
+    meta = s.get("metadata", {})
+    title = meta.get("title") or meta.get("paper_id") or s.get("id", "Kaynak")
+    page  = meta.get("page")
+    label = str(title)[:50]
+    if page:
+        label += f" · s.{page}"
+    return label
+
+
+def _render_sources(sources: list[dict]) -> str:
+    items = []
+    for i, s in enumerate(sources, 1):
+        label   = _source_label(s)
+        snippet = s.get("text", "")[:120].replace("\n", " ").strip()
+        if snippet:
+            snippet = snippet + "…"
+        items.append(
+            f'<div class="src-card">'
+            f'<div class="src-head">[{i}] {label}</div>'
+            f'<div class="src-body">{snippet}</div>'
+            f'</div>'
+        )
+    return "<b>Kaynaklar</b><br>" + "".join(items)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -417,11 +445,7 @@ if page == "🔍 Sorgu":
                 f'<div class="abox">{last["final_answer"]}</div>',
                 unsafe_allow_html=True)
             if last.get("sources"):
-                chips = "".join(
-                    f'<span class="chip">📄 {s["metadata"].get("title", s["id"])[:45]}</span>'
-                    for s in last["sources"]
-                )
-                src_slot.markdown(f"**Kaynaklar**<br>{chips}", unsafe_allow_html=True)
+                src_slot.markdown(_render_sources(last["sources"]), unsafe_allow_html=True)
         else:
             ans_slot.markdown(
                 '<div class="abox empty">Sorgu bekleniyor…</div>',
@@ -452,11 +476,7 @@ if page == "🔍 Sorgu":
 
         # update sources
         if result["sources"]:
-            chips = "".join(
-                f'<span class="chip">📄 {s["metadata"].get("title", s["id"])[:45]}</span>'
-                for s in result["sources"]
-            )
-            src_slot.markdown(f"**Kaynaklar**<br>{chips}", unsafe_allow_html=True)
+            src_slot.markdown(_render_sources(result["sources"]), unsafe_allow_html=True)
 
         # persist to session state (no rerun — result stays visible)
         st.session_state["last_result"] = result
