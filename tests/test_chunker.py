@@ -3,6 +3,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from app.chunker import ChunkerConfig, chunk_text, split_text, create_chunks
 
 
 

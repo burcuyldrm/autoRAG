@@ -1,14 +1,13 @@
-from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass
-
-import uuid
+from typing import Any, Dict, TypedDict
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 @dataclass
 class ChunkerConfig:
-
+    chunk_size: int = 1024
+    chunk_overlap: int = 200
 
 
 class Chunk(TypedDict):
@@ -17,37 +16,47 @@ class Chunk(TypedDict):
     metadata: Dict[str, Any]
 
 
+def chunk_text(
+    text: str,
+    config: ChunkerConfig | None = None
+) -> list[str]:
 
+    if config is None:
+        config = ChunkerConfig()
 
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=config.chunk_size,
+        chunk_overlap=config.chunk_overlap,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
 
     return splitter.split_text(text)
 
+def split_text(text: str, chunk_size: int = 512) -> list[str]:
+    config = ChunkerConfig(
+        chunk_size=chunk_size,
+        chunk_overlap=0
+    )
 
-def create_chunks(
-    pages: List[Dict[str, Any]],
-    config: ChunkerConfig = ChunkerConfig()
-) -> List[Chunk]:
-    all_chunks: List[Chunk] = []
+    return chunk_text(text, config)
+
+
+def create_chunks(pages: list[dict]) -> list[dict]:
+    results = []
 
     for page_data in pages:
-        text = page_data.get("text", "")
-        page_chunks = split_text(text, config)
+        chunks = split_text(page_data["text"])
 
-        for index, chunk_text in enumerate(page_chunks):
-            chunk: Chunk = {
-                "id": f"{page_data.get('paper_id')}_p{page_data.get('page')}_c{index}_{uuid.uuid4().hex[:8]}",
-                "text": chunk_text,
+        for i, chunk in enumerate(chunks):
+            results.append({
+                "id": f'{page_data["paper_id"]}_{page_data["page"]}_{i}',
+                "text": chunk,
                 "metadata": {
-                    "paper_id": page_data.get("paper_id"),
-                    "page": page_data.get("page"),
-                    "source_url": page_data.get("source_url"),
-                    "source_file": page_data.get("source_file"),
+                    "paper_id": page_data["paper_id"],
+                    "page": page_data["page"],
+                    "source_url": page_data["source_url"],
+                    "source_file": page_data["source_file"],
+                }
+            })
 
-                },
-            }
-
-            all_chunks.append(chunk)
-
-
+    return results

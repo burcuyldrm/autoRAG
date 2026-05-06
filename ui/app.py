@@ -11,6 +11,8 @@ import sys
 import os
 
 import streamlit as st
+from dotenv import load_dotenv
+load_dotenv()
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -19,6 +21,210 @@ st.set_page_config(
     page_icon="🔍",
     layout="wide",
 )
+
+def _run_rag_query(query: str, retrieval_mode: str) -> dict:
+    """Runs Auto-RAG loop: retrieve -> grade -> rewrite -> retrieve -> grade -> generate."""
+    print("RUN_RAG_QUERY_STARTED")
+
+    try:
+        from graph.state import GraphState
+        from graph.nodes.grade_node import grade_node
+        from graph.nodes.generate_node import generate_node
+
+        print("STEP 0 GET_LLM")
+        llm = _get_llm()
+
+        max_rewrites = 1
+        confidence_threshold = 0.60
+
+        current_query = query
+        state: GraphState = {
+            "query": query,
+            "chunks": [],
+            "iteration": 0,
+        }
+
+        for iteration in range(max_rewrites + 1):
+            print(f"STEP 1 RETRIEVE iteration={iteration}, query={current_query}")
+
+            chunks = _real_retrieve(current_query, retrieval_mode)
+
+            print(f"STEP 1 RETRIEVE DONE chunk_count={len(chunks)}")
+
+            state["chunks"] = chunks
+            state["retrieved_chunks"] = chunks
+            state["iteration"] = iteration
+
+            if current_query != query:
+                state["rewritten_query"] = current_query
+
+            print("STEP 2 GRADE")
+            state = grade_node(state, llm=llm)
+            print(f"STEP 2 GRADE DONE grade_result={state.get('grade_result')}")
+
+            grade = state.get("grade_result", {})
+            relevant = grade.get("relevant", False)
+            confidence = grade.get("confidence", 0.0)
+
+            if relevant and confidence >= confidence_threshold:
+                print("STEP 2 ROUTE break_generate")
+                break
+
+            if iteration < max_rewrites:
+                current_query = f"{query} academic paper retrieval augmented generation"
+                print(f"STEP 2 ROUTE rewrite_query={current_query}")
+
+        print("STEP 3 GENERATE")
+        state = generate_node(state, llm=llm)
+        print("STEP 3 GENERATE DONE")
+
+        print("RUN_RAG_QUERY_FINISHED")
+        return state
+
+    except Exception as exc:
+        print(f"RUN_RAG_QUERY_ERROR: {exc}")
+        return {
+            "final_answer": f"Pipeline hatası: {exc}",
+            "sources": [],
+        }
+_VECTORSTORE = None
+
+
+def _get_cached_vectorstore():
+    global _VECTORSTORE
+
+    if _VECTORSTORE is None:
+        from vectordb.vectorstore import get_vectorstore
+        _VECTORSTORE = get_vectorstore(backend="faiss")
+
+    return _VECTORSTORE
+
+def _real_retrieve(query: str, retrieval_mode: str = "dense") -> list[dict]:
+    import json
+    from pathlib import Path
+
+    chunks_path = Path("data/chunks/sample_chunks.json")
+
+    if not chunks_path.exists():
+        return []
+
+    with chunks_path.open("r", encoding="utf-8") as f:
+        chunks = json.load(f)
+
+    query_terms = set(query.lower().split())
+    scored = []
+
+    for chunk in chunks:
+        text = chunk.get("text", "")
+        text_terms = set(text.lower().split())
+        score = len(query_terms & text_terms)
+
+        chunk.setdefault("metadata", {})
+        chunk["metadata"].setdefault("source_url", "")
+
+        scored.append((score, chunk))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    return [chunk for score, chunk in scored[:5]]
+
+def _load_sample_chunks() -> list[dict]:
+    import json
+    import os
+
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    candidates = [
+        os.path.join(base_dir, "data", "chunks", "sample_chunks.json"),
+        os.path.join(base_dir, "data", "chunks", "sample_1024_chunks.json"),
+    ]
+
+    for path in candidates:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+
+    return []
+
+
+def _get_llm():
+    return None
+
+
+def _render_dashboard() -> None:
+    """T26 — Experiment Comparison Dashboard."""
+    import plotly.graph_objects as go
+
+    st.title("Deney Karşılaştırma Paneli")
+
+    results_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "results")
+    json_files = [f for f in os.listdir(results_dir) if f.endswith(".json")] if os.path.isdir(results_dir) else []
+
+    if not json_files:
+        st.info("Henüz deney sonucu yok. `python -m eval.eval_runner` veya `python -m eval.retrieval_experiment` çalıştırın.")
+        return
+
+    selected = st.multiselect("Sonuç dosyaları:", json_files, default=json_files[:3])
+    if not selected:
+        return
+
+    experiments = {}
+    for fname in selected:
+        try:
+            with open(os.path.join(results_dir, fname)) as f:
+                experiments[fname] = json.load(f)
+        except Exception:
+            st.warning(f"{fname} okunamadı.")
+
+    # --- Metrics table ---
+    rows = []
+    for fname, data in experiments.items():
+        row = {"Deney": fname}
+        for key in ("standard_rag", "auto_rag"):
+            if key in data:
+                for metric, val in data[key].items():
+                    row[f"{key}/{metric}"] = round(val, 3)
+        for key in ("faithfulness", "answer_relevancy", "context_precision"):
+            if key in data:
+                row[key] = round(data[key], 3)
+        rows.append(row)
+
+    if rows:
+        st.subheader("Metrik Tablosu")
+        st.dataframe(rows, use_container_width=True)
+
+    # --- Bar chart ---
+    metric_keys = [k for k in rows[0] if k != "Deney"] if rows else []
+    if metric_keys:
+        selected_metric = st.selectbox("Grafik için metrik:", metric_keys)
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    name=r["Deney"],
+                    x=[r["Deney"]],
+                    y=[r.get(selected_metric, 0)],
+                )
+                for r in rows
+            ]
+        )
+        fig.update_layout(
+            title=f"{selected_metric} Karşılaştırması",
+            yaxis=dict(range=[0, 1]),
+            height=400,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    # --- Retrieval experiment comparison ---
+    retrieval_exps = {k: v for k, v in experiments.items() if "retrieval_mode" in v}
+    if retrieval_exps:
+        st.subheader("Retrieval Karşılaştırması (T22)")
+        labels = list(retrieval_exps.keys())
+        scores = [v.get("answer_relevancy", 0) for v in retrieval_exps.values()]
+        modes = [v.get("retrieval_mode", "?") for v in retrieval_exps.values()]
+        fig2 = go.Figure(
+            data=[go.Bar(x=[f"{m}: {l}" for m, l in zip(modes, labels)], y=scores)]
+        )
+        fig2.update_layout(title="Answer Relevancy — Dense vs Hybrid", yaxis=dict(range=[0, 1]))
+        st.plotly_chart(fig2, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # Sidebar navigation
@@ -111,118 +317,5 @@ else:
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
-def _run_rag_query(query: str, retrieval_mode: str) -> dict:
-    """Runs the LangGraph pipeline and returns state."""
-    try:
-        from graph.state import GraphState
-        from graph.nodes.grade_node import grade_node
-        from graph.nodes.generate_node import generate_node
-
-        # Pipeline bağımlılıkları (T09, T11, T13, T15, T16) henüz tamamlanmadığında
-        # minimal stub döndür — T09/T11/T13-T16 merge edilince gerçek pipeline bağlanır
-        state: GraphState = {
-            "query": query,
-            "chunks": _stub_retrieve(query),
-            "iteration": 0,
-        }
-        state = grade_node(state, llm=_get_llm())
-        state = generate_node(state, llm=_get_llm())
-        return state
-    except Exception as exc:
-        return {"final_answer": f"Pipeline hatası: {exc}", "sources": []}
 
 
-def _stub_retrieve(query: str) -> list[dict]:
-    """Placeholder until T09/T11 retriever nodes are merged."""
-    return [
-        {
-            "id": "stub-1",
-            "text": f"[Stub] '{query}' için getirilen örnek metin parçası.",
-            "metadata": {"paper_id": "stub", "page": 1, "title": "Örnek Makale"},
-        }
-    ]
-
-
-def _get_llm():
-    import os
-    if not os.environ.get("OPENAI_API_KEY"):
-        return None
-    from langchain_openai import ChatOpenAI
-    return ChatOpenAI(model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
-
-
-def _render_dashboard() -> None:
-    """T26 — Experiment Comparison Dashboard."""
-    import plotly.graph_objects as go
-
-    st.title("Deney Karşılaştırma Paneli")
-
-    results_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "results")
-    json_files = [f for f in os.listdir(results_dir) if f.endswith(".json")] if os.path.isdir(results_dir) else []
-
-    if not json_files:
-        st.info("Henüz deney sonucu yok. `python -m eval.eval_runner` veya `python -m eval.retrieval_experiment` çalıştırın.")
-        return
-
-    selected = st.multiselect("Sonuç dosyaları:", json_files, default=json_files[:3])
-    if not selected:
-        return
-
-    experiments = {}
-    for fname in selected:
-        try:
-            with open(os.path.join(results_dir, fname)) as f:
-                experiments[fname] = json.load(f)
-        except Exception:
-            st.warning(f"{fname} okunamadı.")
-
-    # --- Metrics table ---
-    rows = []
-    for fname, data in experiments.items():
-        row = {"Deney": fname}
-        for key in ("standard_rag", "auto_rag"):
-            if key in data:
-                for metric, val in data[key].items():
-                    row[f"{key}/{metric}"] = round(val, 3)
-        for key in ("faithfulness", "answer_relevancy", "context_precision"):
-            if key in data:
-                row[key] = round(data[key], 3)
-        rows.append(row)
-
-    if rows:
-        st.subheader("Metrik Tablosu")
-        st.dataframe(rows, use_container_width=True)
-
-    # --- Bar chart ---
-    metric_keys = [k for k in rows[0] if k != "Deney"] if rows else []
-    if metric_keys:
-        selected_metric = st.selectbox("Grafik için metrik:", metric_keys)
-        fig = go.Figure(
-            data=[
-                go.Bar(
-                    name=r["Deney"],
-                    x=[r["Deney"]],
-                    y=[r.get(selected_metric, 0)],
-                )
-                for r in rows
-            ]
-        )
-        fig.update_layout(
-            title=f"{selected_metric} Karşılaştırması",
-            yaxis=dict(range=[0, 1]),
-            height=400,
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    # --- Retrieval experiment comparison ---
-    retrieval_exps = {k: v for k, v in experiments.items() if "retrieval_mode" in v}
-    if retrieval_exps:
-        st.subheader("Retrieval Karşılaştırması (T22)")
-        labels = list(retrieval_exps.keys())
-        scores = [v.get("answer_relevancy", 0) for v in retrieval_exps.values()]
-        modes = [v.get("retrieval_mode", "?") for v in retrieval_exps.values()]
-        fig2 = go.Figure(
-            data=[go.Bar(x=[f"{m}: {l}" for m, l in zip(modes, labels)], y=scores)]
-        )
-        fig2.update_layout(title="Answer Relevancy — Dense vs Hybrid", yaxis=dict(range=[0, 1]))
-        st.plotly_chart(fig2, use_container_width=True)

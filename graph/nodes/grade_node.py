@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 
 from graph.state import GraphState, GradeResult
 
@@ -29,39 +28,42 @@ def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
 
     if not chunks:
         state["grade_result"] = GradeResult(
-            relevant=False, confidence=1.0, reasoning="No chunks retrieved."
+            relevant=False,
+            confidence=1.0,
+            reasoning="No chunks retrieved.",
+        )
+        return state
+
+    if llm is None:
+        state["grade_result"] = GradeResult(
+            relevant=True,
+            confidence=0.65,
+            reasoning="Fallback grading: chunks were retrieved, assumed moderately relevant.",
         )
         return state
 
     chunk_texts = "\n\n".join(
-        f"[{i+1}] {c.get('text', '')}" for i, c in enumerate(chunks[:5])
+        f"[{i + 1}] {chunk.get('text', '')}" for i, chunk in enumerate(chunks[:5])
     )
     prompt = _GRADE_PROMPT.format(query=query, chunks=chunk_texts)
-
-    if llm is None:
-        llm = _default_llm()
 
     try:
         response = llm.invoke(prompt)
         content = response.content if hasattr(response, "content") else str(response)
         result = json.loads(content.strip())
+
         state["grade_result"] = GradeResult(
             relevant=bool(result.get("relevant", False)),
             confidence=float(result.get("confidence", 0.0)),
             reasoning=str(result.get("reasoning", "")),
         )
-    except (json.JSONDecodeError, Exception) as exc:
+
+    except Exception as exc:
         logger.error("grade_node LLM error: %s", exc)
         state["grade_result"] = GradeResult(
-            relevant=False, confidence=0.0, reasoning=f"Grading failed: {exc}"
+            relevant=False,
+            confidence=0.0,
+            reasoning=f"Grading failed: {exc}",
         )
+
     return state
-
-
-def _default_llm():
-    from langchain_openai import ChatOpenAI
-
-    return ChatOpenAI(
-        model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
-        temperature=0,
-    )

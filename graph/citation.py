@@ -9,13 +9,18 @@ def format_citation(
     page: int | None,
     url: str,
 ) -> str:
-    """Returns: [Title](url) — Authors (Page X)"""
+    """Returns formatted citation."""
+
     author_str = ", ".join(authors[:3])
     if len(authors) > 3:
         author_str += " et al."
-    page_str = f", Page {page}" if page is not None else ""
-    return f"[{title}]({url}) — {author_str}{page_str}"
 
+    page_str = f", Page {page}" if page is not None else ""
+
+    if url:
+        return f"[{title}]({url}) — {author_str}{page_str}"
+
+    return f"{title} — {author_str}{page_str}"
 
 def format_sources(sources: list[dict[str, Any]]) -> list[str]:
     citations = []
