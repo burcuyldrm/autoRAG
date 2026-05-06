@@ -15,6 +15,7 @@ PyMuPDF
 langchain
 langchain-community
 langchain-openai
+langchain-anthropic
 langchain-google-genai
 langchain-ollama
 langchain-text-splitters
