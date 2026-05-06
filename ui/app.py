@@ -174,7 +174,6 @@ def _ollama_reachable() -> bool:
         return False
 
 
-@st.cache_resource(show_spinner=False)
 def _build_llm(model_name: str):
     """Returns (llm, provider_label) or (None, 'stub')."""
     if os.environ.get("ANTHROPIC_API_KEY"):
@@ -381,6 +380,8 @@ if page == "🔍 Sorgu":
     st.markdown("---")
     col_q, col_trace, col_ans = st.columns([1, 1.05, 1.1], gap="medium")
 
+    last = st.session_state.get("last_result")
+
     with col_q:
         st.markdown("#### Sorgu")
         query = st.text_area("q", height=160,
@@ -388,48 +389,68 @@ if page == "🔍 Sorgu":
                              label_visibility="collapsed")
         run = st.button("▶  Çalıştır", use_container_width=True, type="primary")
         st.caption(f"Mod: **{retrieval_mode}** · Top-K: **{top_k}**")
+        if run and not query.strip():
+            st.warning("Lütfen bir sorgu girin.")
 
     with col_trace:
         st.markdown("#### Pipeline Trace")
         trace_slot = st.empty()
-        init_html = "".join([
-            scard("🔍","Retrieve","Bekleniyor…","pending"),
-            scard("⚖️","Grade",   "Bekleniyor…","pending"),
-            scard("✨","Generate","Bekleniyor…","pending"),
-            scard("📎","Citation","Bekleniyor…","pending"),
-        ])
-        trace_slot.markdown(init_html, unsafe_allow_html=True)
+        if last:
+            trace_slot.markdown("".join(
+                scard(s["icon"], s["name"], s["detail"], s["status"])
+                for s in last["steps"]
+            ), unsafe_allow_html=True)
+        else:
+            trace_slot.markdown("".join([
+                scard("🔍","Retrieve","Bekleniyor…","pending"),
+                scard("⚖️","Grade",   "Bekleniyor…","pending"),
+                scard("✨","Generate","Bekleniyor…","pending"),
+                scard("📎","Citation","Bekleniyor…","pending"),
+            ]), unsafe_allow_html=True)
 
     with col_ans:
         st.markdown("#### Cevap")
         ans_slot = st.empty()
-        ans_slot.markdown(
-            '<div class="abox empty">Sorgu bekleniyor…</div>',
-            unsafe_allow_html=True)
         src_slot = st.empty()
+        if last:
+            ans_slot.markdown(
+                f'<div class="abox">{last["final_answer"]}</div>',
+                unsafe_allow_html=True)
+            if last.get("sources"):
+                chips = "".join(
+                    f'<span class="chip">📄 {s["metadata"].get("title", s["id"])[:45]}</span>'
+                    for s in last["sources"]
+                )
+                src_slot.markdown(f"**Kaynaklar**<br>{chips}", unsafe_allow_html=True)
+        else:
+            ans_slot.markdown(
+                '<div class="abox empty">Sorgu bekleniyor…</div>',
+                unsafe_allow_html=True)
 
     # ── run ─────────────────────────────────────────────────────────────
     if run and query.strip():
-        # show "running" for step 1
         trace_slot.markdown("".join([
             scard("🔍","Retrieve","Vektörler aranıyor…","running"),
-            scard("⚖️","Grade",   "Bekleniyor…",        "pending"),
-            scard("✨","Generate","Bekleniyor…",        "pending"),
-            scard("📎","Citation","Bekleniyor…",        "pending"),
+            scard("⚖️","Grade",   "Bekleniyor…","pending"),
+            scard("✨","Generate","Bekleniyor…","pending"),
+            scard("📎","Citation","Bekleniyor…","pending"),
         ]), unsafe_allow_html=True)
 
         with st.spinner("Çalışıyor…"):
             result = _run_pipeline(query, llm, top_k, retrieval_mode)
 
+        # update trace
         trace_slot.markdown("".join(
             scard(s["icon"], s["name"], s["detail"], s["status"])
             for s in result["steps"]
         ), unsafe_allow_html=True)
 
+        # update answer
         ans_slot.markdown(
             f'<div class="abox">{result["final_answer"]}</div>',
             unsafe_allow_html=True)
 
+        # update sources
         if result["sources"]:
             chips = "".join(
                 f'<span class="chip">📄 {s["metadata"].get("title", s["id"])[:45]}</span>'
@@ -437,16 +458,14 @@ if page == "🔍 Sorgu":
             )
             src_slot.markdown(f"**Kaynaklar**<br>{chips}", unsafe_allow_html=True)
 
+        # persist to session state (no rerun — result stays visible)
+        st.session_state["last_result"] = result
         st.session_state["last_metrics"] = {
             "f": f"{random.uniform(.70,.95):.2f}",
             "r": f"{random.uniform(.70,.95):.2f}",
             "p": f"{random.uniform(.65,.90):.2f}",
             "t": f"{result['elapsed']:.1f}s",
         }
-        st.rerun()
-
-    elif run:
-        st.warning("Lütfen bir sorgu girin.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
