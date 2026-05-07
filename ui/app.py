@@ -400,25 +400,6 @@ def _run_pipeline(query, llm, k, mode, use_rewrite=True, skip_grade=False, fast_
             "rewritten_query":rewritten,"elapsed":time.time()-t0}
 
 
-# ════════════════════════════════════════════════════════════════════════════
-# INGESTION HELPERS
-# ════════════════════════════════════════════════════════════════════════════
-
-def _ingest_sample():
-    store = _get_vectorstore()
-    _seed_store(store)
-    _get_vectorstore.clear()
-    return _get_vectorstore().count()
-
-def _ingest_arxiv(query, max_results):
-    try:
-        from data.ingest import ingest_from_arxiv
-        count = ingest_from_arxiv(query, max_results=max_results)
-        _get_vectorstore.clear()
-        return count, None
-    except Exception as e:
-        return 0, str(e)
-
 
 # ════════════════════════════════════════════════════════════════════════════
 # SIDEBAR
@@ -483,17 +464,6 @@ with st.sidebar:
     except Exception:
         st.caption("VectorDB bağlanamadı")
 
-    with st.expander("ArXiv'den makale çek"):
-        arxiv_q   = st.text_input("Konu", placeholder="retrieval augmented generation")
-        arxiv_max = st.number_input("Makale sayısı", 1, 20, 3, step=1)
-        if st.button("Çek ve yükle", use_container_width=True):
-            with st.spinner(f"{arxiv_max} makale indiriliyor…"):
-                n, err = _ingest_arxiv(arxiv_q, int(arxiv_max))
-            if err:
-                st.error(err)
-            else:
-                st.success(f"{n} chunk eklendi ✓")
-            st.rerun()
 
 
 # ════════════════════════════════════════════════════════════════════════════
