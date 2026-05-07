@@ -76,5 +76,5 @@ def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
 
 
 def _default_llm():
-    from app.llm_factory import get_llm
-    return get_llm()
+    from app.llm_factory import get_fast_llm
+    return get_fast_llm()

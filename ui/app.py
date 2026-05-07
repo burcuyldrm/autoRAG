@@ -200,6 +200,24 @@ def _build_llm(model_name):
     return None, "stub"
 
 
+@st.cache_resource(show_spinner=False)
+def _get_fast_llm():
+    """qwen2.5:3b for grade/rewrite — loads once, stays warm (~0.7 s/call)."""
+    if not _ollama_reachable():
+        return None
+    try:
+        from langchain_ollama import ChatOllama
+        fast_model = os.environ.get("OLLAMA_FAST_MODEL", "qwen2.5:3b")
+        return ChatOllama(
+            model=fast_model,
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+            temperature=0,
+            num_predict=200,
+        )
+    except Exception:
+        return None
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # VECTORSTORE  (cached — prevents repeated SentenceTransformer loading)
 # ════════════════════════════════════════════════════════════════════════════
@@ -296,7 +314,7 @@ def _stub_answer(query, chunks):
 
 MAX_REWRITE = 1  # max rewrite attempts
 
-def _run_pipeline(query, llm, k, mode, use_rewrite=True):
+def _run_pipeline(query, llm, k, mode, use_rewrite=True, skip_grade=False, fast_llm=None):
     t0    = time.time()
     steps = []
     active_query = query
@@ -308,16 +326,17 @@ def _run_pipeline(query, llm, k, mode, use_rewrite=True):
                   "status":"warning" if is_stub else "success",
                   "detail":f"{len(chunks)} chunk · **{mode}**" + (" (demo)" if is_stub else "")})
 
-    grade_result = {"relevant":True,"confidence":0.5,"reasoning":"—"}
+    grade_result = {"relevant":True,"confidence":1.0,"reasoning":"Grade atlandı"}
     rewritten    = None
 
-    if llm and not is_stub:
+    if llm and not is_stub and not skip_grade:
+        grade_llm = fast_llm or llm  # use fast model when available
         # ── Grade ────────────────────────────────────────────────────────
         try:
             from graph.nodes.grade_node import grade_node
             from graph.state import GraphState
             st8: GraphState = {"query":active_query,"chunks":chunks,"iteration":0}
-            st8 = grade_node(st8, llm=llm)
+            st8 = grade_node(st8, llm=grade_llm)
             grade_result = dict(st8.get("grade_result", grade_result))
             rel = grade_result.get("relevant", True)
             steps.append({"icon":"⚖️","name":"Grade",
@@ -330,7 +349,7 @@ def _run_pipeline(query, llm, k, mode, use_rewrite=True):
             if not rel and use_rewrite:
                 from graph.nodes.rewrite_node import rewrite_node
                 st8["grade_result"] = grade_result
-                st8 = rewrite_node(st8, llm=llm)
+                st8 = rewrite_node(st8, llm=grade_llm)
                 rewritten = st8.get("rewritten_query", active_query)
                 steps.append({"icon":"✏️","name":"Rewrite",
                               "status":"warning",
@@ -344,6 +363,9 @@ def _run_pipeline(query, llm, k, mode, use_rewrite=True):
         except Exception as e:
             steps.append({"icon":"⚖️","name":"Grade","status":"warning",
                           "detail":f"Hata: {e}"})
+    elif skip_grade:
+        steps.append({"icon":"⚖️","name":"Grade","status":"success",
+                      "detail":"Atlandı — chunk'lar ilgili kabul edildi"})
     else:
         steps.append({"icon":"⚖️","name":"Grade","status":"warning",
                       "detail":"Stub mod — chunk'lar ilgili kabul edildi"})
@@ -438,6 +460,7 @@ with st.sidebar:
 
     st.markdown('<div class="slbl">Pipeline</div>', unsafe_allow_html=True)
     use_rewrite = st.toggle("Rewrite node aktif", value=True)
+    skip_grade  = st.toggle("Grade'i atla (hızlı mod)", value=False)
 
     st.markdown("---")
     llm, provider = _build_llm(model_name)
@@ -446,6 +469,11 @@ with st.sidebar:
     else:
         st.markdown(badge(f"✓  {provider}","ok"),unsafe_allow_html=True)
     st.caption(f"`{model_name}`")
+
+    fast_llm = _get_fast_llm()
+    fast_model = os.environ.get("OLLAMA_FAST_MODEL", "qwen2.5:3b")
+    if fast_llm:
+        st.caption(f"Grade/Rewrite: `{fast_model}` (hızlı)")
 
     # ── Ingestion ──────────────────────────────────────────────────────
     st.markdown("---")
@@ -557,7 +585,10 @@ if page == "Sorgu":
             scard("📎","Citation","Bekleniyor…","pending")]),unsafe_allow_html=True)
 
         with st.spinner("Pipeline çalışıyor…"):
-            result = _run_pipeline(query, llm, top_k, retrieval_mode, use_rewrite)
+            result = _run_pipeline(query, llm, top_k, retrieval_mode,
+                                   use_rewrite=use_rewrite,
+                                   skip_grade=skip_grade,
+                                   fast_llm=fast_llm)
 
         st.session_state["last_result"]  = result
         st.session_state["last_metrics"] = {

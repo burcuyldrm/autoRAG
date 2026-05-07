@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 # Priority order: OpenAI → Gemini → Ollama (local, no API key)
 # Set OLLAMA_MODEL in .env to activate local DeepSeek/any Ollama model.
+# Set OLLAMA_FAST_MODEL for lightweight grade/rewrite nodes (default: qwen2.5:3b).
 
 
 def get_llm(temperature: float = 0):
@@ -32,3 +33,26 @@ def get_llm(temperature: float = 0):
     from langchain_ollama import ChatOllama
     logger.info("Using Ollama (local): %s @ %s", ollama_model, ollama_base)
     return ChatOllama(model=ollama_model, base_url=ollama_base, temperature=temperature)
+
+
+def get_fast_llm(temperature: float = 0):
+    """Lightweight LLM for grade/rewrite nodes.
+
+    When cloud keys exist the same model is already fast, so we reuse it.
+    Locally we spin up a small model (qwen2.5:3b) with a token cap so
+    grading takes ~1 s instead of ~25 s.
+    """
+    if os.environ.get("OPENAI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+        return get_llm(temperature)
+
+    fast_model = os.environ.get("OLLAMA_FAST_MODEL", "qwen2.5:3b")
+    ollama_base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    from langchain_ollama import ChatOllama
+    logger.info("Using fast Ollama (local): %s @ %s", fast_model, ollama_base)
+    # num_predict caps output tokens — grade needs <100, rewrite <60
+    return ChatOllama(
+        model=fast_model,
+        base_url=ollama_base,
+        temperature=temperature,
+        num_predict=200,
+    )
