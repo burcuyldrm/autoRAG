@@ -5,7 +5,6 @@ Run: streamlit run ui/app.py
 from __future__ import annotations
 
 import json, os, sys, time, random
-from datetime import datetime, timedelta
 from typing import Any
 
 import streamlit as st
@@ -475,22 +474,14 @@ with st.sidebar:
     if fast_llm:
         st.caption(f"Grade/Rewrite: `{fast_model}` (hızlı)")
 
-    # ── Ingestion ──────────────────────────────────────────────────────
+    # ── VectorDB durumu ────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown('<div class="slbl">Veri Kaynağı</div>', unsafe_allow_html=True)
     try:
         store     = _get_vectorstore()
         doc_count = store.count()
         st.caption(f"VectorDB: **{doc_count}** chunk")
     except Exception:
         st.caption("VectorDB bağlanamadı")
-        doc_count = 0
-
-    if st.button("⬆ Sample chunks yükle", use_container_width=True):
-        with st.spinner("Yükleniyor…"):
-            n = _ingest_sample()
-        st.success(f"{n} chunk yüklendi ✓")
-        st.rerun()
 
     with st.expander("ArXiv'den makale çek"):
         arxiv_q   = st.text_input("Konu", placeholder="retrieval augmented generation")
@@ -651,114 +642,42 @@ elif page == "Deneyler":
     METRICS   = ["faithfulness","answer_relevancy","context_precision"]
     MET_LBL   = ["Faithfulness","Answer Relevancy","Context Precision"]
     SYS_COLOR = {"standard_rag":"#6366f1","auto_rag":"#059669"}
-    MET_COLOR = ["#2563eb","#059669","#7c3aed"]
+
+    # ── Standard RAG vs AutoRAG bar chart ──────────────────────────────
+    names = list(experiments.keys())
+    fig = go.Figure()
     BASE_LAYOUT = dict(
         plot_bgcolor="#fff", paper_bgcolor="#fff",
         font=dict(color="#0f172a",family="Inter"),
         yaxis=dict(range=[0,1],gridcolor="#f1f5f9",tickformat=".0%",title="Skor"),
         xaxis=dict(gridcolor="#f1f5f9"),
         legend=dict(bgcolor="#fff",bordercolor="#e2e8f0",orientation="h",yanchor="bottom",y=1.02),
-        margin=dict(t=50,b=80), height=400,
+        margin=dict(t=50,b=80), height=380,
     )
-
-    tab1,tab2,tab3,tab4,tab5 = st.tabs([
-        "  📈 RAGAS Metrikleri  ",
-        "  🔀 Retrieval Modu   ",
-        "  ✏️ Rewrite Etkisi   ",
-        "  📦 Chunk Boyutu     ",
-        "  📉 Trend            ",
-    ])
-
-    # ── TAB 1: Standard RAG vs AutoRAG ─────────────────────────────────
-    with tab1:
-        names = list(experiments.keys())
-        fig = go.Figure()
-        for sys_key,color in SYS_COLOR.items():
-            label = "Standard RAG" if sys_key=="standard_rag" else "AutoRAG"
-            x,y = [],[]
-            for name in names:
-                for m,ml in zip(METRICS,MET_LBL):
-                    x.append(f"{name.replace('.json','')}<br>{ml}")
-                    y.append(experiments[name].get(sys_key,{}).get(m,0))
-            fig.add_trace(go.Bar(name=label,x=x,y=y,marker_color=color,opacity=.85,marker_line_width=0))
-        fig.update_layout(barmode="group",**BASE_LAYOUT)
-        st.plotly_chart(fig,use_container_width=True)
-
-        rows = []
-        for name,data in experiments.items():
-            row = {"Deney":name.replace(".json",""),
-                   "Retrieval":data.get("retrieval_mode","?"),
-                   "Chunk":data.get("chunk_size","?"),
-                   "Rewrite":"✓" if data.get("rewrite") else "✗"}
-            for s in ("standard_rag","auto_rag"):
-                for m,ml in zip(METRICS,MET_LBL):
-                    k2 = f"{'Std' if s=='standard_rag' else 'Auto'}/{ml[:5]}"
-                    row[k2] = round(data.get(s,{}).get(m,0),3)
-            rows.append(row)
-        st.dataframe(rows,use_container_width=True,hide_index=True)
-
-    # ── TAB 2: Dense vs Hybrid vs Sparse ───────────────────────────────
-    with tab2:
-        mode_exps = {k:v for k,v in experiments.items() if "retrieval_mode" in v}
-        fig2 = go.Figure()
-        for m,ml,color in zip(METRICS,MET_LBL,MET_COLOR):
-            fig2.add_trace(go.Bar(
-                name=ml,
-                x=[f"{v.get('retrieval_mode','?')}  ·  {k.replace('.json','')}"
-                   for k,v in mode_exps.items()],
-                y=[v.get("auto_rag",{}).get(m,0) for v in mode_exps.values()],
-                marker_color=color,opacity=.85,marker_line_width=0))
-        fig2.update_layout(barmode="group",title="AutoRAG — Dense / Hybrid / Sparse",**BASE_LAYOUT)
-        st.plotly_chart(fig2,use_container_width=True)
-
-    # ── TAB 3: Rewrite açık vs kapalı ──────────────────────────────────
-    with tab3:
-        rw_on  = {k:v for k,v in experiments.items() if v.get("rewrite") is True}
-        rw_off = {k:v for k,v in experiments.items() if v.get("rewrite") is False}
-        fig3 = go.Figure()
-        for group,color,label in [(rw_on,"#059669","Rewrite ON"),(rw_off,"#6366f1","Rewrite OFF")]:
+    for sys_key,color in SYS_COLOR.items():
+        label = "Standard RAG" if sys_key=="standard_rag" else "AutoRAG"
+        x,y = [],[]
+        for name in names:
             for m,ml in zip(METRICS,MET_LBL):
-                vals = [v.get("auto_rag",{}).get(m,0) for v in group.values()]
-                avg  = sum(vals)/len(vals) if vals else 0
-                fig3.add_trace(go.Bar(name=f"{label} · {ml}",
-                    x=[label], y=[avg], marker_color=color, opacity=.85,
-                    marker_line_width=0, legendgroup=label))
-        lyt = dict(BASE_LAYOUT); lyt["xaxis"] = dict(gridcolor="#f1f5f9")
-        fig3.update_layout(barmode="group",title="Rewrite Node Etkisi (AutoRAG avg)",**lyt)
-        st.plotly_chart(fig3,use_container_width=True)
-        st.caption("Rewrite node, ilgisiz sonuçlar için sorguyu yeniden yazarak doğruluğu artırır.")
+                x.append(f"{name.replace('.json','')}<br>{ml}")
+                y.append(experiments[name].get(sys_key,{}).get(m,0))
+        fig.add_trace(go.Bar(name=label,x=x,y=y,marker_color=color,opacity=.85,marker_line_width=0))
+    fig.update_layout(barmode="group",**BASE_LAYOUT)
+    st.plotly_chart(fig,use_container_width=True)
 
-    # ── TAB 4: Chunk size karşılaştırması ──────────────────────────────
-    with tab4:
-        chunk_exps = {k:v for k,v in experiments.items() if isinstance(v.get("chunk_size"),int)}
-        sizes = sorted(set(v["chunk_size"] for v in chunk_exps.values()))
-        fig4 = go.Figure()
-        for m,ml,color in zip(METRICS,MET_LBL,MET_COLOR):
-            x,y = [],[]
-            for sz in sizes:
-                exps_sz = [v for v in chunk_exps.values() if v.get("chunk_size")==sz]
-                avg = sum(v.get("auto_rag",{}).get(m,0) for v in exps_sz)/len(exps_sz) if exps_sz else 0
-                x.append(f"{sz} token"); y.append(avg)
-            fig4.add_trace(go.Bar(name=ml,x=x,y=y,marker_color=color,opacity=.85,marker_line_width=0))
-        lyt4 = dict(BASE_LAYOUT); lyt4["xaxis"] = dict(title="Chunk boyutu",gridcolor="#f1f5f9")
-        fig4.update_layout(barmode="group",title="Chunk Boyutu Karşılaştırması (AutoRAG avg)",**lyt4)
-        st.plotly_chart(fig4,use_container_width=True)
-        st.caption("Daha büyük chunk'lar daha fazla bağlam sağlar; küçük chunk'lar daha hassas retrieval yapar.")
-
-    # ── TAB 5: Trend ───────────────────────────────────────────────────
-    with tab5:
-        base = datetime(2026,4,1)
-        dates = [base+timedelta(days=i*3) for i in range(12)]
-        fig5 = go.Figure()
-        for m,ml,color in zip(METRICS,MET_LBL,MET_COLOR):
-            v0   = random.uniform(.60,.70)
-            vals = [min(v0+i*random.uniform(.008,.022),.97) for i in range(12)]
-            fig5.add_trace(go.Scatter(x=dates,y=vals,mode="lines+markers",name=ml,
-                line=dict(color=color,width=2),marker=dict(size=5,color=color)))
-        lyt5 = dict(BASE_LAYOUT)
-        lyt5["yaxis"] = dict(range=[.5,1],gridcolor="#f1f5f9",tickformat=".0%")
-        fig5.update_layout(title="Deney Skoru Trendi",**lyt5)
-        st.plotly_chart(fig5,use_container_width=True)
+    # ── Summary table ───────────────────────────────────────────────────
+    rows = []
+    for name,data in experiments.items():
+        row = {"Deney":name.replace(".json",""),
+               "Retrieval":data.get("retrieval_mode","?"),
+               "Chunk":data.get("chunk_size","?"),
+               "Rewrite":"✓" if data.get("rewrite") else "✗"}
+        for s in ("standard_rag","auto_rag"):
+            for m,ml in zip(METRICS,MET_LBL):
+                k2 = f"{'Std' if s=='standard_rag' else 'Auto'}/{ml[:5]}"
+                row[k2] = round(data.get(s,{}).get(m,0),3)
+        rows.append(row)
+    st.dataframe(rows,use_container_width=True,hide_index=True)
 
 
 # ════════════════════════════════════════════════════════════════════════════
