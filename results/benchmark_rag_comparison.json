@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-06-18T18:31:08",
+  "n_experiments": 2,
+  "benchmark": "rag_comparison",
+  "experiments": [
+    {
+      "experiment_name": "standard_rag",
+      "experiment_type": "comparison",
+      "timestamp": "2026-06-18T18:31:08",
+      "model_name": null,
+      "provider": null,
+      "retriever_type": null,
+      "chunk_size": null,
+      "top_k": null,
+      "faithfulness": 0.83,
+      "answer_relevancy": 0.87,
+      "context_precision": 0.79,
+      "context_recall": 0.74,
+      "latency_seconds": null,
+      "avg_latency_seconds": 0.05,
+      "rewrite_count": 0,
+      "avg_rewrite_count": 0.0,
+      "token_usage": null,
+      "cost_estimate": null,
+      "n_questions": 10
+    },
+    {
+      "experiment_name": "auto_rag",
+      "experiment_type": "comparison",
+      "timestamp": "2026-06-18T18:31:08",
+      "model_name": null,
+      "provider": null,
+      "retriever_type": null,
+      "chunk_size": null,
+      "top_k": null,
+      "faithfulness": 0.83,
+      "answer_relevancy": 0.87,
+      "context_precision": 0.79,
+      "context_recall": 0.74,
+      "latency_seconds": null,
+      "avg_latency_seconds": 0.05,
+      "rewrite_count": 0,
+      "avg_rewrite_count": 1.0,
+      "token_usage": null,
+      "cost_estimate": null,
+      "n_questions": 10
+    }
+  ]
+}

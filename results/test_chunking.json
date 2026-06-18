@@ -1,0 +1,22 @@
+{
+  "experiment_name": "chunking_512",
+  "experiment_type": "chunking",
+  "timestamp": "2026-06-18T18:29:19",
+  "model_name": null,
+  "provider": null,
+  "retriever_type": "hybrid",
+  "chunk_size": 512,
+  "top_k": 5,
+  "faithfulness": null,
+  "answer_relevancy": null,
+  "context_precision": null,
+  "context_recall": null,
+  "latency_seconds": null,
+  "avg_latency_seconds": null,
+  "rewrite_count": 0,
+  "avg_rewrite_count": 0.0,
+  "token_usage": null,
+  "cost_estimate": null,
+  "n_questions": 25,
+  "chunk_size_label": "512"
+}

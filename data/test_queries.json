@@ -1,0 +1,152 @@
+[
+  {
+    "question": "What is Retrieval Augmented Generation (RAG) and how does it differ from standard language model generation?",
+    "ground_truth": "Retrieval Augmented Generation (RAG) is a framework that enhances language model outputs by retrieving relevant documents from an external knowledge base before generating a response. Unlike standard language models that rely solely on parametric knowledge encoded during training, RAG conditions the generation on retrieved context, reducing hallucination and enabling the model to access up-to-date or domain-specific information without retraining.",
+    "expected_source": "Lewis et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. NeurIPS.",
+    "topic": "Retrieval Augmented Generation"
+  },
+  {
+    "question": "What are the two main components of a RAG system and what role does each play?",
+    "ground_truth": "A RAG system consists of a retriever and a generator. The retriever searches an external corpus to identify the most relevant documents or passages for a given query, typically using dense or sparse vector representations. The generator, usually a large language model, conditions its output on both the original query and the retrieved passages to produce an answer grounded in external evidence.",
+    "expected_source": "Lewis et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. NeurIPS.",
+    "topic": "Retrieval Augmented Generation"
+  },
+  {
+    "question": "How does dense retrieval work and what makes it different from keyword-based search?",
+    "ground_truth": "Dense retrieval encodes both queries and documents into continuous high-dimensional vector representations using neural encoders such as BERT-based bi-encoders. Similarity is computed via dot product or cosine distance in the embedding space, allowing the model to capture semantic relationships beyond exact keyword matches. In contrast, keyword-based search relies on term frequency statistics such as TF-IDF or BM25 and cannot match semantically similar terms that differ lexically.",
+    "expected_source": "Karpukhin et al. (2020). Dense Passage Retrieval for Open-Domain Question Answering. EMNLP.",
+    "topic": "Dense retrieval"
+  },
+  {
+    "question": "What is the DPR (Dense Passage Retrieval) model and how is it trained?",
+    "ground_truth": "DPR is a bi-encoder model introduced by Karpukhin et al. that trains separate BERT encoders for questions and passages. It is trained with in-batch negatives using a contrastive learning objective: the dot product between a question vector and its positive passage vector is maximized, while the dot product with negative passages (other questions' positives in the same batch) is minimized. The resulting encoders enable efficient maximum inner product search at retrieval time.",
+    "expected_source": "Karpukhin et al. (2020). Dense Passage Retrieval for Open-Domain Question Answering. EMNLP.",
+    "topic": "Dense retrieval"
+  },
+  {
+    "question": "What is BM25 and what are its key parameters?",
+    "ground_truth": "BM25 (Best Match 25) is a probabilistic ranking function from the Okapi BM25 family that scores documents based on term frequency (TF), inverse document frequency (IDF), and document length normalization. Its two key parameters are k1, which controls term frequency saturation (typically 1.2–2.0), and b, which controls document length normalization (typically 0.75). Unlike raw TF-IDF, BM25 saturates term frequency contributions, preventing a single repeated term from dominating the score.",
+    "expected_source": "Robertson & Zaragoza (2009). The Probabilistic Relevance Framework: BM25 and Beyond. Foundations and Trends in Information Retrieval.",
+    "topic": "BM25"
+  },
+  {
+    "question": "What are the strengths and weaknesses of BM25 compared to neural retrieval methods?",
+    "ground_truth": "BM25 is computationally efficient, requires no training data, and excels at exact keyword matching and rare term retrieval. It is robust to out-of-domain queries because it relies on term statistics rather than learned embeddings. However, BM25 cannot capture semantic similarity between synonyms or paraphrases and is sensitive to vocabulary mismatch. Neural retrieval methods handle semantic similarity better but require large amounts of training data, are computationally heavier at index time, and may generalize poorly to new domains.",
+    "expected_source": "Thakur et al. (2021). BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models. NeurIPS.",
+    "topic": "BM25"
+  },
+  {
+    "question": "What is hybrid retrieval and what problem does it solve?",
+    "ground_truth": "Hybrid retrieval combines dense vector search with sparse keyword-based retrieval (e.g., BM25) to leverage the complementary strengths of both approaches. Dense retrieval captures semantic similarity but may miss exact keyword matches, while BM25 excels at precise term matching but fails on paraphrases. By fusing their result lists, hybrid retrieval achieves more robust performance across diverse query types, reducing the failure modes of each individual approach.",
+    "expected_source": "Ma et al. (2022). Hybrid Document Retrieval for Open-Domain Question Answering. EACL.",
+    "topic": "Hybrid retrieval"
+  },
+  {
+    "question": "What is Reciprocal Rank Fusion (RRF) and how is it used in hybrid retrieval?",
+    "ground_truth": "Reciprocal Rank Fusion (RRF) is a score-independent rank aggregation method that combines multiple ranked lists by summing the reciprocal of each document's rank across lists. The formula is RRF(d) = Σ 1/(k + rank_i(d)), where k is a smoothing constant (typically 60) and rank_i(d) is the position of document d in list i. RRF requires no calibration of score scales between retrievers, making it practical for fusing BM25 and dense retrieval results in hybrid systems.",
+    "expected_source": "Cormack et al. (2009). Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods. SIGIR.",
+    "topic": "Hybrid retrieval"
+  },
+  {
+    "question": "What does faithfulness mean in the context of RAG evaluation?",
+    "ground_truth": "Faithfulness measures whether the claims made in the generated answer are supported by the retrieved context. A faithful answer contains only information that can be inferred or directly extracted from the provided passages. A score of 1.0 indicates every claim in the answer is grounded in the retrieved context, while lower scores indicate the presence of unsupported or fabricated statements. Faithfulness is one of the core RAGAS metrics used to detect hallucination in RAG systems.",
+    "expected_source": "Es et al. (2023). RAGAS: Automated Evaluation of Retrieval Augmented Generation. EACL.",
+    "topic": "Faithfulness"
+  },
+  {
+    "question": "How is faithfulness computed in the RAGAS evaluation framework?",
+    "ground_truth": "In RAGAS, faithfulness is computed by first extracting atomic claims from the generated answer using an LLM. Each claim is then verified against the retrieved context by a separate LLM inference step, producing a binary supported/not-supported judgment. Faithfulness is calculated as the proportion of claims supported by the context: faithfulness = |supported claims| / |total claims|. This process requires an auxiliary LLM for both claim decomposition and verification.",
+    "expected_source": "Es et al. (2023). RAGAS: Automated Evaluation of Retrieval Augmented Generation. EACL.",
+    "topic": "Faithfulness"
+  },
+  {
+    "question": "What is hallucination in language models and why is it particularly problematic in RAG systems?",
+    "ground_truth": "Hallucination refers to the generation of factually incorrect, fabricated, or unsupported content by a language model. In RAG systems, hallucination is especially problematic because the system is expected to answer based on retrieved evidence. When a model ignores the context and generates from parametric memory, or invents citations and facts not present in the retrieved passages, it undermines the reliability of the system. Detecting hallucination in RAG requires comparing generated claims against retrieved context rather than against a static knowledge base.",
+    "expected_source": "Ji et al. (2023). Survey of Hallucination in Natural Language Generation. ACM Computing Surveys.",
+    "topic": "Hallucination"
+  },
+  {
+    "question": "What types of hallucination can occur in RAG systems?",
+    "ground_truth": "RAG systems can exhibit two primary types of hallucination. Intrinsic hallucination occurs when the model generates content that directly contradicts the retrieved context. Extrinsic hallucination occurs when the model generates content that cannot be verified from the retrieved context, regardless of whether it is factually correct. A third issue specific to RAG is context ignorance, where the model generates answers from parametric knowledge while disregarding the retrieved passages entirely.",
+    "expected_source": "Ji et al. (2023). Survey of Hallucination in Natural Language Generation. ACM Computing Surveys.",
+    "topic": "Hallucination"
+  },
+  {
+    "question": "What is query rewriting in RAG and why is it necessary?",
+    "ground_truth": "Query rewriting transforms an original user query into a reformulated version that is better suited for document retrieval. It is necessary because user queries are often ambiguous, conversational, or lack the precise terminology used in indexed documents. By rewriting the query to be more specific, structured, or domain-appropriate, retrieval recall and precision improve. In self-reflective RAG systems, query rewriting is triggered automatically when the initial retrieval yields insufficient or irrelevant context.",
+    "expected_source": "Ma et al. (2023). Query Rewriting for Retrieval-Augmented Large Language Models. EMNLP.",
+    "topic": "Query rewriting"
+  },
+  {
+    "question": "What techniques are commonly used for automatic query rewriting?",
+    "ground_truth": "Common query rewriting techniques include: (1) Pseudo-relevance feedback, which expands the query with terms from top-retrieved documents; (2) LLM-based rewriting, where a language model reformulates the query given the original question and retrieval feedback; (3) HyDE (Hypothetical Document Embeddings), where an LLM generates a hypothetical answer and the generated text is used as the retrieval query; and (4) step-back prompting, which prompts the model to identify the underlying concept behind the question and use that for retrieval.",
+    "expected_source": "Gao et al. (2023). Precise Zero-Shot Dense Retrieval without Relevance Labels. ACL.",
+    "topic": "Query rewriting"
+  },
+  {
+    "question": "What is Self-RAG and how does it decide when to retrieve?",
+    "ground_truth": "Self-RAG is a framework that trains a language model to autonomously decide when retrieval is needed, what passages to retrieve, and how to critically evaluate retrieved content. The model generates special reflection tokens—including Retrieve, ISREL (is the passage relevant?), ISSUP (does the passage support the response?), and ISUSE—that control the retrieval loop. Unlike standard RAG, which always retrieves, Self-RAG retrieves on demand and can generate an answer without retrieval when the model judges it unnecessary.",
+    "expected_source": "Asai et al. (2023). Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection. NeurIPS.",
+    "topic": "Retrieval Augmented Generation"
+  },
+  {
+    "question": "What is REALM and how does it integrate retrieval into language model pretraining?",
+    "ground_truth": "REALM (Retrieval Enhanced Language Model Pretraining) integrates a neural retriever directly into the pretraining objective of a masked language model. During pretraining, the model learns to retrieve relevant documents from a knowledge corpus before predicting masked tokens, jointly training both the retriever and the language model end-to-end. The retriever uses maximum inner product search over a document index that is periodically refreshed. This approach allows the model to access external knowledge at both train and inference time.",
+    "expected_source": "Guu et al. (2020). REALM: Retrieval-Enhanced Language Model Pre-Training. ICML.",
+    "topic": "Retrieval Augmented Generation"
+  },
+  {
+    "question": "What is academic paper retrieval and what makes it different from general web search?",
+    "ground_truth": "Academic paper retrieval focuses on finding relevant scientific publications from scholarly corpora such as arXiv, PubMed, or Semantic Scholar. It differs from general web search in several ways: queries are typically technical and domain-specific; relevance is defined by methodological or conceptual alignment rather than popularity; citation networks provide additional relevance signals; and documents contain structured sections (abstract, methods, results) that can be indexed separately. Evaluation metrics such as NDCG and MAP are used instead of click-through rates.",
+    "expected_source": "Cohan et al. (2020). SPECTER: Document-level Representation Learning using Citation-informed Transformers. ACL.",
+    "topic": "Academic paper retrieval"
+  },
+  {
+    "question": "What is SPECTER and how does it improve academic paper retrieval?",
+    "ground_truth": "SPECTER is a document-level representation model trained using citation-informed contrastive learning. It uses a SciBERT backbone and treats papers that cite each other as positives, and unrelated papers as negatives. By encoding the title and abstract of a paper into a single vector, SPECTER produces embeddings that cluster methodologically related papers together in the embedding space, improving retrieval performance on tasks such as paper recommendation, citation prediction, and scientific literature search.",
+    "expected_source": "Cohan et al. (2020). SPECTER: Document-level Representation Learning using Citation-informed Transformers. ACL.",
+    "topic": "Academic paper retrieval"
+  },
+  {
+    "question": "What is context precision in RAGAS and how is it measured?",
+    "ground_truth": "Context precision measures the proportion of retrieved chunks that are actually relevant to answering the question. It evaluates retrieval quality by checking whether the retrieved context is signal-rich or noisy. In RAGAS, context precision is computed by asking an LLM to judge whether each retrieved chunk is relevant to the ground truth answer, then averaging these binary relevance scores. A high context precision indicates that the retriever returns mostly useful passages, minimizing distraction from irrelevant content.",
+    "expected_source": "Es et al. (2023). RAGAS: Automated Evaluation of Retrieval Augmented Generation. EACL.",
+    "topic": "Faithfulness"
+  },
+  {
+    "question": "How does chunk size affect retrieval and generation quality in RAG systems?",
+    "ground_truth": "Chunk size determines the granularity of indexed passages and creates a trade-off between retrieval precision and answer completeness. Smaller chunks (e.g., 256 tokens) enable more precise retrieval of specific facts but may lack surrounding context needed for coherent generation. Larger chunks (e.g., 1024 tokens) provide richer context to the generator but reduce retrieval precision by introducing irrelevant content. Optimal chunk size is domain-dependent and is typically determined empirically; sentence-level or paragraph-level chunking with overlap is a common heuristic.",
+    "expected_source": "Barnett et al. (2024). Seven Failure Points When Engineering a Retrieval Augmented Generation System. ICSE.",
+    "topic": "Retrieval Augmented Generation"
+  },
+  {
+    "question": "What is answer relevancy in RAGAS and how does it differ from faithfulness?",
+    "ground_truth": "Answer relevancy measures how well the generated answer addresses the original question, regardless of whether the answer is grounded in the retrieved context. It focuses on the question-answer alignment: a relevant answer stays on topic and responds to what was asked. Faithfulness, by contrast, measures whether the answer's claims are supported by the retrieved context, focusing on context-answer grounding. An answer can be faithful but irrelevant (accurately describes retrieved content unrelated to the question) or relevant but unfaithful (correctly addresses the question but with fabricated claims).",
+    "expected_source": "Es et al. (2023). RAGAS: Automated Evaluation of Retrieval Augmented Generation. EACL.",
+    "topic": "Faithfulness"
+  },
+  {
+    "question": "What is the role of the top-k parameter in RAG retrieval and how does it affect performance?",
+    "ground_truth": "The top-k parameter controls how many retrieved passages are passed to the generator as context. A small k (e.g., 3) reduces noise and keeps the context focused but risks missing relevant information. A large k (e.g., 15 or more) increases recall but may overwhelm the generator with irrelevant passages and exceed the LLM's context window. Empirically, k is often set between 5 and 10; optimal values depend on query complexity, document length, and the generator's context length limit.",
+    "expected_source": "Shi et al. (2023). Large Language Models Can Be Easily Distracted by Irrelevant Context. ICML.",
+    "topic": "Retrieval Augmented Generation"
+  },
+  {
+    "question": "What is the BEIR benchmark and why is it important for evaluating retrieval systems?",
+    "ground_truth": "BEIR (Benchmarking IR) is a heterogeneous benchmark introduced by Thakur et al. consisting of 18 diverse retrieval datasets spanning domains such as biomedical, financial, legal, and general web text. It is designed for zero-shot evaluation, meaning models are assessed on tasks and domains they were not explicitly trained on. BEIR is important because it reveals the generalization gap of neural retrieval models: while dense retrievers achieve strong performance on their training domain, they often underperform BM25 on out-of-domain tasks.",
+    "expected_source": "Thakur et al. (2021). BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models. NeurIPS.",
+    "topic": "Dense retrieval"
+  },
+  {
+    "question": "What is HyDE (Hypothetical Document Embeddings) and how does it improve zero-shot retrieval?",
+    "ground_truth": "HyDE is a query augmentation technique where an LLM generates a hypothetical document that could answer the query—even if the generated content is factually incorrect—and this hypothetical document is then encoded and used as the retrieval query. The intuition is that a hypothetical answer written in the target document style is a better retrieval vector than the original short query. HyDE enables effective dense retrieval without any labeled training data, achieving competitive zero-shot performance on multiple open-domain QA benchmarks.",
+    "expected_source": "Gao et al. (2023). Precise Zero-Shot Dense Retrieval without Relevance Labels. ACL.",
+    "topic": "Query rewriting"
+  },
+  {
+    "question": "How does the iterative retrieval loop in Agentic RAG or Self-Reflective RAG systems differ from standard single-pass RAG?",
+    "ground_truth": "Standard single-pass RAG retrieves once and generates an answer from the retrieved context without evaluating whether the retrieval was sufficient. Agentic or self-reflective RAG systems introduce a feedback loop: after retrieval, the system grades the relevance of retrieved context using an LLM or a trained critic. If the context is judged insufficient, the system rewrites the query and performs a new retrieval pass. This iterative process continues until sufficient context is obtained or a maximum iteration limit is reached, resulting in higher quality answers at the cost of increased latency.",
+    "expected_source": "Asai et al. (2023). Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection. NeurIPS.",
+    "topic": "Query rewriting"
+  }
+]
