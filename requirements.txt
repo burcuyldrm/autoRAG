@@ -1,8 +1,3 @@
-fastapi>=0.100,<1
-uvicorn
-python-dotenv
-
-
 # Data fetching
 arxiv
 requests
@@ -15,6 +10,10 @@ PyMuPDF
 langchain
 langchain-community
 langchain-openai
+langchain-text-splitters
+
+# Embeddings
+sentence-transformers
 
 # Vector databases
 chromadb
@@ -33,9 +32,15 @@ datasets
 
 # UI
 streamlit
+plotly
+
+# Utilities
+python-dotenv
+pydantic
+fastapi
+uvicorn
 
 
 # Testing
 pytest
 pytest-mock
-
