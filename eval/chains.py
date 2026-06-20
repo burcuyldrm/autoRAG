@@ -1,16 +1,13 @@
 """
 Chain factory functions used by CLI entry points.
 
-When OPENAI_API_KEY is not set, all factories return a MockChain so that
-the CLI commands produce valid JSON output without requiring an API key.
+All chains are backed by a local Ollama model — no API key required.
+This makes every experiment fully reproducible on any machine with Ollama installed.
 """
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
-
-from eval.benchmark_runner import MockChain
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +16,11 @@ def get_standard_chain(
     vectorstore: Any = None,
     bm25_retriever: Any = None,
 ) -> Any:
-    """StandardRAGChain if API key is present, else MockChain."""
-    if not os.environ.get("OPENAI_API_KEY"):
-        logger.info("OPENAI_API_KEY not set — using MockChain for standard_chain.")
-        return MockChain(answer="[Mock] Standard RAG answer.", rewrite_count=0)
-    from langchain_openai import ChatOpenAI
+    """Return a StandardRAGChain backed by a local Ollama LLM."""
+    from app.llm_factory import get_llm
     from app.standard_rag import StandardRAGChain
 
-    llm = ChatOpenAI(model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
+    llm = get_llm(fast=False)
     return StandardRAGChain(vectorstore=vectorstore, bm25_retriever=bm25_retriever, llm=llm)
 
 
@@ -36,14 +30,11 @@ def get_autorag_chain(
     grade_threshold: float = 0.60,
     max_rewrites: int = 2,
 ) -> Any:
-    """AutoRAGChain if API key is present, else MockChain."""
-    if not os.environ.get("OPENAI_API_KEY"):
-        logger.info("OPENAI_API_KEY not set — using MockChain for autorag_chain.")
-        return MockChain(answer="[Mock] Auto-RAG answer.", rewrite_count=1)
-    from langchain_openai import ChatOpenAI
+    """Return an AutoRAGChain backed by a local Ollama LLM."""
+    from app.llm_factory import get_llm
     from graph.autorag_chain import AutoRAGChain
 
-    llm = ChatOpenAI(model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
+    llm = get_llm(fast=False)
     return AutoRAGChain(
         vectorstore=vectorstore,
         bm25_retriever=bm25_retriever,
@@ -58,16 +49,11 @@ def get_retrieval_chain(
     vectorstore: Any = None,
     bm25_retriever: Any = None,
 ) -> Any:
-    """StandardRAGChain (pinned to retrieval_mode) if API key present, else MockChain."""
-    if not os.environ.get("OPENAI_API_KEY"):
-        logger.info("OPENAI_API_KEY not set — using MockChain for retrieval_chain(%s).", retrieval_mode)
-        return MockChain()
-    from langchain_openai import ChatOpenAI
+    """Return a StandardRAGChain pinned to retrieval_mode, backed by Ollama."""
+    from app.llm_factory import get_llm
     from app.standard_rag import StandardRAGChain
-
-    llm = ChatOpenAI(model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"), temperature=0)
-    chain = StandardRAGChain(vectorstore=vectorstore, bm25_retriever=bm25_retriever, llm=llm)
-
-    # Pin retrieval_mode via wrapper so run_chain_on_dataset() sees it
     from eval.benchmark_runner import RetrieverWrapper
+
+    llm = get_llm(fast=False)
+    chain = StandardRAGChain(vectorstore=vectorstore, bm25_retriever=bm25_retriever, llm=llm)
     return RetrieverWrapper(chain, retrieval_mode=retrieval_mode)

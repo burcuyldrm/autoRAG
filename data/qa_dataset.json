@@ -1,0 +1,242 @@
+[
+  {
+    "id": "q001",
+    "question": "What is Retrieval-Augmented Generation (RAG)?",
+    "ground_truth": "RAG is a technique that combines retrieval of relevant documents from a knowledge base with language model generation to produce more accurate and grounded responses.",
+    "expected_source": "RAG paper (Lewis et al., 2020)",
+    "topic": "RAG",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q002",
+    "question": "How does dense retrieval differ from sparse retrieval methods like BM25?",
+    "ground_truth": "Dense retrieval uses neural network embeddings to represent queries and documents in a continuous vector space and retrieves via similarity search, while sparse retrieval like BM25 relies on exact or weighted term overlap between query and document tokens.",
+    "expected_source": "DPR paper (Karpukhin et al., 2020)",
+    "topic": "dense retrieval",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q003",
+    "question": "What is BM25 and how does it score document relevance?",
+    "ground_truth": "BM25 (Best Match 25) is a probabilistic ranking function that scores documents based on term frequency, inverse document frequency, and document length normalization. It uses a saturation function to limit the effect of very high term frequencies.",
+    "expected_source": "Okapi BM25 (Robertson and Sparck Jones, 1994)",
+    "topic": "BM25",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q004",
+    "question": "What is hybrid retrieval and how does it combine dense and sparse methods?",
+    "ground_truth": "Hybrid retrieval combines dense (embedding-based) and sparse (keyword-based) retrieval by merging their ranked result lists, often using fusion methods like Reciprocal Rank Fusion (RRF). This leverages the complementary strengths of semantic understanding and exact keyword matching.",
+    "expected_source": "Hybrid Search survey",
+    "topic": "hybrid retrieval",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q005",
+    "question": "What is Reciprocal Rank Fusion (RRF) and why is it used?",
+    "ground_truth": "Reciprocal Rank Fusion is a rank aggregation method that combines multiple ranked lists by assigning each document a score of 1/(k + rank), where k is a constant (typically 60). RRF is parameter-light and robust, making it popular for hybrid retrieval fusion.",
+    "expected_source": "RRF paper (Cormack et al., 2009)",
+    "topic": "hybrid retrieval",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q006",
+    "question": "What is query rewriting in the context of RAG systems?",
+    "ground_truth": "Query rewriting is the process of reformulating a user's original query to improve retrieval quality. In self-reflective RAG systems, if retrieved documents are not relevant, the query is automatically rewritten using an LLM before re-retrieval.",
+    "expected_source": "Self-RAG (Asai et al., 2023)",
+    "topic": "query rewriting",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q007",
+    "question": "How is faithfulness measured in RAG evaluation?",
+    "ground_truth": "Faithfulness measures the proportion of claims in the generated answer that are supported by the retrieved contexts. A faithful answer does not include hallucinated or unsupported information. RAGAS computes faithfulness by extracting claims from the answer and verifying them against context.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q008",
+    "question": "What is context precision in RAG evaluation?",
+    "ground_truth": "Context precision measures how many of the retrieved context chunks are actually relevant to the question. It is the fraction of retrieved chunks that contain useful information for answering the question, penalizing irrelevant retrieved content.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "context precision",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q009",
+    "question": "What is context recall in RAG evaluation?",
+    "ground_truth": "Context recall measures how much of the ground truth answer is covered by the retrieved context. It quantifies whether the retrieval system has fetched all necessary information to produce a complete and correct answer.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "context recall",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q010",
+    "question": "What is answer relevancy in RAG evaluation?",
+    "ground_truth": "Answer relevancy measures how pertinent the generated answer is to the original question. It penalizes answers that are incomplete or contain unnecessary information. RAGAS computes it by generating questions from the answer and measuring their similarity to the original question.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q011",
+    "question": "What is a vector database and how is it used in RAG?",
+    "ground_truth": "A vector database stores high-dimensional embedding vectors and enables efficient similarity search (e.g., approximate nearest neighbor search). In RAG systems, document chunks are embedded and stored in a vector database, which is then queried at inference time to retrieve relevant chunks.",
+    "expected_source": "Weaviate/Pinecone documentation",
+    "topic": "vector database",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q012",
+    "question": "What is chunking in document processing for RAG?",
+    "ground_truth": "Chunking is the process of splitting long documents into smaller, manageable text segments before indexing. Chunk size affects retrieval quality: smaller chunks offer more precision but may miss context, while larger chunks provide more context but may introduce noise.",
+    "expected_source": "LangChain documentation on text splitters",
+    "topic": "chunking",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q013",
+    "question": "How does chunk size affect RAG retrieval performance?",
+    "ground_truth": "Smaller chunk sizes (e.g., 128-256 tokens) tend to yield higher context precision but lower context recall, while larger chunk sizes (e.g., 512-1024 tokens) may include more relevant information but also more noise. The optimal chunk size depends on the document type and use case.",
+    "expected_source": "RAG evaluation studies",
+    "topic": "chunking",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q014",
+    "question": "What is top-k retrieval and how does the value of k affect RAG quality?",
+    "ground_truth": "Top-k retrieval returns the k most relevant document chunks for a query. Increasing k improves recall (more relevant content retrieved) but can decrease precision and increase latency. The optimal k balances comprehensiveness with noise and computational cost.",
+    "expected_source": "RAG survey papers",
+    "topic": "top-k retrieval",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q015",
+    "question": "What is Self-RAG and how does it differ from standard RAG?",
+    "ground_truth": "Self-RAG is a framework that trains a language model to adaptively retrieve and self-reflect on retrieved passages using special tokens. Unlike standard RAG which always retrieves, Self-RAG decides when to retrieve and evaluates the relevance and support of retrieved passages.",
+    "expected_source": "Self-RAG paper (Asai et al., 2023)",
+    "topic": "RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q016",
+    "question": "What are the main limitations of standard RAG systems?",
+    "ground_truth": "Standard RAG systems face limitations including: retrieval of irrelevant context leading to hallucinations, no mechanism to evaluate retrieval quality, inability to refine queries if initial retrieval fails, and dependence on the quality of the initial document index.",
+    "expected_source": "RAG survey (Gao et al., 2023)",
+    "topic": "RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q017",
+    "question": "What is approximate nearest neighbor (ANN) search and why is it used in vector databases?",
+    "ground_truth": "Approximate Nearest Neighbor search finds vectors close to a query vector without exhaustively comparing all vectors, trading a small amount of accuracy for large gains in speed. ANN algorithms like HNSW and IVF are used in vector databases to enable scalable semantic retrieval over millions of documents.",
+    "expected_source": "FAISS paper (Johnson et al., 2019)",
+    "topic": "vector database",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q018",
+    "question": "What is FAISS and what are its main capabilities?",
+    "ground_truth": "FAISS (Facebook AI Similarity Search) is an open-source library for efficient similarity search and clustering of dense vectors. It provides GPU-accelerated and CPU-based index types including flat, IVF, and HNSW indexes, supporting both exact and approximate nearest neighbor search.",
+    "expected_source": "FAISS paper (Johnson et al., 2019)",
+    "topic": "vector database",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q019",
+    "question": "How do sentence transformers generate embeddings for semantic retrieval?",
+    "ground_truth": "Sentence transformers are BERT-based models fine-tuned with contrastive or triplet loss to produce fixed-size dense vector representations of sentences. They are trained so that semantically similar sentences have high cosine similarity, enabling semantic search by comparing query and document embeddings.",
+    "expected_source": "Sentence-BERT paper (Reimers and Gurevych, 2019)",
+    "topic": "dense retrieval",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q020",
+    "question": "What is RAGAS and what metrics does it provide for RAG evaluation?",
+    "ground_truth": "RAGAS is a framework for reference-free evaluation of RAG systems. It provides metrics including faithfulness (claim support by context), answer relevancy (relevance to question), context precision (fraction of retrieved context that is relevant), and context recall (coverage of ground truth by context).",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "RAG",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q021",
+    "question": "What is hallucination in LLM-generated answers and how does RAG mitigate it?",
+    "ground_truth": "Hallucination occurs when an LLM generates factually incorrect or unsupported information. RAG mitigates hallucination by grounding generation in retrieved documents, constraining the model to produce answers supported by the provided context rather than relying solely on parametric knowledge.",
+    "expected_source": "Survey on LLM hallucinations",
+    "topic": "faithfulness",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q022",
+    "question": "What is the difference between parametric and non-parametric knowledge in language models?",
+    "ground_truth": "Parametric knowledge is information encoded in the model's weights during training, while non-parametric knowledge comes from external sources retrieved at inference time. RAG augments parametric knowledge with non-parametric retrieval to improve factual accuracy and updatability.",
+    "expected_source": "RAG paper (Lewis et al., 2020)",
+    "topic": "RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q023",
+    "question": "How does IDF (Inverse Document Frequency) work in BM25?",
+    "ground_truth": "IDF measures how rare a term is across all documents in the corpus. Terms that appear in many documents receive low IDF scores (they are common and less discriminative), while rare terms receive high IDF scores (they are more informative). BM25 multiplies term frequency by IDF to weight unique, informative terms more heavily.",
+    "expected_source": "Information Retrieval textbooks",
+    "topic": "BM25",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q024",
+    "question": "What is the role of a relevance grader in self-reflective RAG?",
+    "ground_truth": "A relevance grader evaluates whether retrieved document chunks contain information relevant to the user query. In self-reflective RAG, the grader (typically an LLM) assigns a confidence score and a binary relevant/not-relevant label, triggering query rewriting if relevance is insufficient.",
+    "expected_source": "CRAG paper (Yan et al., 2024)",
+    "topic": "RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q025",
+    "question": "What is CRAG (Corrective RAG) and how does it improve upon standard RAG?",
+    "ground_truth": "CRAG (Corrective Retrieval Augmented Generation) introduces a lightweight retrieval evaluator that assesses the quality of retrieved documents. If retrieval quality is poor, CRAG performs web searches to supplement knowledge. This corrective mechanism addresses cases where standard RAG retrieves irrelevant or insufficient context.",
+    "expected_source": "CRAG paper (Yan et al., 2024)",
+    "topic": "RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q026",
+    "question": "How does ChromaDB support RAG workflows?",
+    "ground_truth": "ChromaDB is an open-source embedding database that stores documents with their embeddings and metadata. It supports similarity search using distance metrics like cosine and provides Python and JavaScript APIs. In RAG workflows, it serves as the vector store for ingesting chunks and retrieving relevant passages at query time.",
+    "expected_source": "ChromaDB documentation",
+    "topic": "vector database",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q027",
+    "question": "What is the effect of overlap between text chunks on retrieval quality?",
+    "ground_truth": "Adding overlap between consecutive chunks (e.g., 10-20% of chunk size) helps preserve context at chunk boundaries. This reduces the risk of splitting important sentences or concepts across chunks, improving retrieval recall at the cost of slightly larger index size.",
+    "expected_source": "LangChain chunking documentation",
+    "topic": "chunking",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q028",
+    "question": "What is multi-hop reasoning in RAG and why is it challenging?",
+    "ground_truth": "Multi-hop reasoning requires integrating information from multiple documents to answer a question that cannot be answered from a single passage. It is challenging in RAG because retrieving all necessary passages in a single query is difficult; iterative retrieval or structured reasoning is often needed.",
+    "expected_source": "HotpotQA and multi-hop RAG papers",
+    "topic": "RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q029",
+    "question": "What is the difference between open-domain QA and closed-domain QA in the context of RAG?",
+    "ground_truth": "Open-domain QA operates over a large, unrestricted corpus (e.g., Wikipedia or the web) where the system must find and synthesize relevant information. Closed-domain QA is restricted to a specific knowledge base or set of documents. RAG was originally designed for open-domain QA but is widely applied to closed-domain enterprise settings.",
+    "expected_source": "Open-Domain QA survey",
+    "topic": "RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q030",
+    "question": "Why might hybrid retrieval outperform pure dense or pure sparse retrieval in academic search?",
+    "ground_truth": "Academic queries often contain both technical terminology (favoring BM25 exact matching) and conceptual semantics (favoring dense retrieval). Hybrid retrieval captures both aspects: BM25 handles specific method names or acronyms while dense retrieval captures related concepts, resulting in higher recall and precision overall.",
+    "expected_source": "Hybrid retrieval evaluation studies",
+    "topic": "hybrid retrieval",
+    "difficulty": "hard"
+  }
+]

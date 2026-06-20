@@ -42,7 +42,12 @@ _METRIC_LABELS: dict[str, str] = {
     "context_recall": "Context Recall",
     "avg_latency_seconds": "Avg Latency (s)",
     "avg_rewrite_count": "Avg Rewrites",
+    "faithfulness_score": "Faithfulness Score",
 }
+
+# Fixed benchmark result file names
+_BENCHMARK_RAG_FILE = "benchmark_rag_comparison.json"
+_BENCHMARK_RETRIEVER_FILE = "benchmark_retriever.json"
 
 _COLORS = ["#4C78A8", "#F58518", "#E45756", "#72B7B2", "#54A24B", "#B279A2", "#FF9DA7"]
 
@@ -285,6 +290,24 @@ def _page_rag_query() -> None:
                         for s in sources:
                             st.markdown(f"- {s.get('metadata', {}).get('title', s.get('id', '?'))}")
 
+                # Faithfulness display
+                faith_result = result.get("faithfulness_result")
+                faith_score = result.get("faithfulness_score")
+                if faith_result:
+                    faith_icon = "✅" if faith_result.get("faithful") else "⚠️"
+                    with st.expander(f"Faithfulness {faith_icon}", expanded=False):
+                        st.write(f"**Faithful:** {faith_result.get('faithful')}")
+                        st.write(f"**Confidence:** {_safe_float(faith_result.get('confidence'), 2)}")
+                        unsupported = faith_result.get("unsupported_claims", [])
+                        if unsupported:
+                            st.write("**Unsupported claims:**")
+                            for claim in unsupported:
+                                st.markdown(f"- {claim}")
+                        if faith_result.get("reasoning"):
+                            st.write(f"**Reasoning:** {faith_result['reasoning']}")
+                elif faith_score is not None:
+                    st.caption(f"Faithfulness score: {_safe_float(faith_score, 3)}")
+
                 st.caption("Retrieved Sources sayfasında chunk detaylarını görüntüleyebilirsiniz.")
 
     elif run_btn:
@@ -322,6 +345,7 @@ def _page_metrics_dashboard() -> None:
     table_cols = [
         "experiment_name", "experiment_type",
         "faithfulness", "answer_relevancy", "context_precision", "context_recall",
+        "faithfulness_score",
         "avg_latency_seconds", "avg_rewrite_count", "n_questions", "_source_file",
     ]
     display_rows = []
@@ -331,6 +355,20 @@ def _page_metrics_dashboard() -> None:
             for col in table_cols
         })
     st.dataframe(display_rows, use_container_width=True)
+
+    # --- CSV download ---
+    if display_rows:
+        import csv, io
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=table_cols)
+        writer.writeheader()
+        writer.writerows(display_rows)
+        st.download_button(
+            label="CSV olarak indir",
+            data=buf.getvalue(),
+            file_name="metrics_dashboard.csv",
+            mime="text/csv",
+        )
 
     # --- Grafikler ---
     st.subheader("Metrik Grafikleri")
@@ -433,6 +471,21 @@ def _page_benchmark_results() -> None:
     all_data = _load_all_results()
     rows = _extract_experiments(all_data)
 
+    # Show status of the key benchmark files
+    rag_file_present = _BENCHMARK_RAG_FILE in all_data
+    ret_file_present = _BENCHMARK_RETRIEVER_FILE in all_data
+    col1, col2 = st.columns(2)
+    col1.metric(
+        "benchmark_rag_comparison.json",
+        "Mevcut" if rag_file_present else "Yok",
+        delta=None,
+    )
+    col2.metric(
+        "benchmark_retriever.json",
+        "Mevcut" if ret_file_present else "Yok",
+        delta=None,
+    )
+
     tabs = st.tabs([
         "Standard RAG vs Auto-RAG",
         "Retriever Karşılaştırması",
@@ -509,6 +562,7 @@ def _benchmark_table_and_chart(rows: list[dict], x_field: str, title: str) -> No
     table_cols = [
         x_field, "faithfulness", "answer_relevancy",
         "context_precision", "context_recall",
+        "faithfulness_score",
         "avg_latency_seconds", "avg_rewrite_count", "n_questions",
     ]
     display = []
@@ -518,6 +572,21 @@ def _benchmark_table_and_chart(rows: list[dict], x_field: str, title: str) -> No
             for col in table_cols
         })
     st.dataframe(display, use_container_width=True)
+
+    # CSV download
+    if display:
+        import csv, io
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=table_cols)
+        writer.writeheader()
+        writer.writerows(display)
+        st.download_button(
+            label="CSV olarak indir",
+            data=buf.getvalue(),
+            file_name=f"{title.replace(' ', '_').lower()}.csv",
+            mime="text/csv",
+            key=f"dl_{title}",
+        )
 
     ragas_metrics = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
     if any(r.get(m) is not None for r in rows for m in ragas_metrics):

@@ -14,6 +14,7 @@ from typing import Any
 from graph.nodes.grade_node import grade_node
 from graph.nodes.generate_node import generate_node
 from graph.nodes.rewrite_node import rewrite_query
+from graph.nodes.faithfulness_node import faithfulness_node
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,10 @@ class AutoRAGChain:
         gen_state: dict[str, Any] = {"query": current_query, "chunks": last_chunks}
         gen_state = generate_node(gen_state, llm=self._llm)
 
+        # Faithfulness evaluation
+        gen_state["query"] = current_query
+        gen_state = faithfulness_node(gen_state, llm=self._llm)
+
         return {
             "original_query": original_query,
             "final_query": current_query,
@@ -140,6 +145,9 @@ class AutoRAGChain:
             "contexts": [c["text"] for c in last_chunks],
             "sources": gen_state.get("sources", []),
             "chunks": last_chunks,
+            "faithfulness_result": gen_state.get("faithfulness_result", {}),
+            "faithfulness_score": gen_state.get("faithfulness_score", 0.0),
+            "unsupported_claims": gen_state.get("unsupported_claims", []),
         }
 
     # ------------------------------------------------------------------

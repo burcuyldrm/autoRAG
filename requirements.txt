@@ -9,8 +9,9 @@ PyMuPDF
 # Text processing
 langchain
 langchain-community
-langchain-openai
+langchain-ollama
 langchain-text-splitters
+# langchain-openai  # not used; kept for reference only
 
 # Embeddings
 sentence-transformers

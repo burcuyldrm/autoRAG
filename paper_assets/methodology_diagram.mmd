@@ -1,0 +1,50 @@
+---
+title: Self-Reflective Auto-RAG Methodology
+---
+flowchart TD
+    %% -----------------------------------------------------------------------
+    %% A) Standard RAG Flow
+    %% -----------------------------------------------------------------------
+    subgraph A["A) Standard RAG"]
+        direction TB
+        A1([Question]) --> A2[Retriever]
+        A2 --> A3["Top-k Contexts"]
+        A3 --> A4[Generator]
+        A4 --> A5([Answer + Sources])
+    end
+
+    %% -----------------------------------------------------------------------
+    %% B) Self-Reflective Auto-RAG Flow
+    %% -----------------------------------------------------------------------
+    subgraph B["B) Self-Reflective Auto-RAG"]
+        direction TB
+        B1([Question]) --> B2[Retriever]
+        B2 --> B3["Retrieved Contexts"]
+        B3 --> B4{Relevance Grader}
+        B4 -->|"Relevance ≥ threshold"| B6[Generator]
+        B4 -->|"Relevance < threshold"| B5["Query Rewriter"]
+        B5 -->|"Rewritten Query"| B2
+        B6 --> B7["Faithfulness Checker"]
+        B7 --> B8(["Answer + Sources + Metrics"])
+    end
+
+    %% -----------------------------------------------------------------------
+    %% Styling
+    %% -----------------------------------------------------------------------
+    style A fill:#EBF5FB,stroke:#2E86C1,stroke-width:2px
+    style B fill:#EAFAF1,stroke:#1E8449,stroke-width:2px
+
+    style A1 fill:#2E86C1,color:#fff,stroke:none
+    style A5 fill:#2E86C1,color:#fff,stroke:none
+    style A2 fill:#AED6F1,stroke:#2E86C1
+    style A3 fill:#AED6F1,stroke:#2E86C1
+    style A4 fill:#AED6F1,stroke:#2E86C1
+
+    style B1 fill:#1E8449,color:#fff,stroke:none
+    style B8 fill:#1E8449,color:#fff,stroke:none
+    style B2 fill:#A9DFBF,stroke:#1E8449
+    style B3 fill:#A9DFBF,stroke:#1E8449
+    style B4 fill:#F9E79F,stroke:#D4AC0D,stroke-width:2px
+    style B5 fill:#FDEBD0,stroke:#E59866
+    style B6 fill:#A9DFBF,stroke:#1E8449
+    style B7 fill:#D5D8DC,stroke:#717D7E

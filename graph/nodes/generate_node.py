@@ -83,9 +83,6 @@ def generate_node(state: GraphState, llm: object | None = None) -> GraphState:
 
 
 def _default_llm():
-    from langchain_openai import ChatOpenAI
+    from app.llm_factory import get_llm
 
-    return ChatOpenAI(
-        model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
-        temperature=0,
-    )
+    return get_llm(fast=False)

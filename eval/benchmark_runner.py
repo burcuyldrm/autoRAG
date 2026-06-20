@@ -103,8 +103,10 @@ _EMPTY_METRICS: dict[str, Any] = {
 
 def compute_ragas_metrics_safe(records: list[dict[str, Any]]) -> dict[str, Any]:
     """
-    Compute all four RAGAS metrics. Returns None values if RAGAS fails or
-    records are empty (e.g. no API key, no data).
+    Compute all four RAGAS metrics using a local Ollama LLM and sentence-transformers
+    embeddings — no API key required, fully reproducible.
+
+    Falls back to None values only if Ollama is unreachable or records are empty.
     """
     if not records:
         return dict(_EMPTY_METRICS)
@@ -117,11 +119,17 @@ def compute_ragas_metrics_safe(records: list[dict[str, Any]]) -> dict[str, Any]:
             context_recall,
             faithfulness,
         )
+        from app.llm_factory import get_ragas_embeddings, get_ragas_llm
+
+        ragas_llm = get_ragas_llm(fast=True)
+        ragas_embeddings = get_ragas_embeddings()
 
         ds = Dataset.from_list(records)
         result = evaluate(
             ds,
             metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+            llm=ragas_llm,
+            embeddings=ragas_embeddings,
         )
         return {
             "faithfulness": float(result["faithfulness"]),
@@ -198,6 +206,8 @@ def run_rag_comparison(
     standard_chain: Any | None = None,
     autorag_chain: Any | None = None,
     output_path: str = "results/benchmark_rag_comparison.json",
+    n_questions: int | None = None,
+    dataset_path: str | None = None,
 ) -> list[ExperimentResult]:
     """Benchmark 1: run Standard RAG and Auto-RAG side by side."""
     if standard_chain is None:
@@ -205,7 +215,8 @@ def run_rag_comparison(
     if autorag_chain is None:
         autorag_chain = MockChain(rewrite_count=1)
 
-    logger.info("Benchmark 1 — Standard RAG vs Auto-RAG (%d questions)", len(dataset))
+    n = n_questions if n_questions is not None else len(dataset)
+    logger.info("Benchmark 1 — Standard RAG vs Auto-RAG (%d questions)", n)
     results = [
         run_single_experiment(
             standard_chain, dataset,
@@ -218,7 +229,13 @@ def run_rag_comparison(
             experiment_type="comparison",
         ),
     ]
-    save_benchmark_results(results, output_path, extra={"benchmark": "rag_comparison"})
+    extra: dict[str, Any] = {
+        "benchmark_name": "standard_vs_autorag",
+        "n_questions": n,
+    }
+    if dataset_path:
+        extra["dataset_path"] = dataset_path
+    save_benchmark_results(results, output_path, extra=extra)
     return results
 
 
@@ -231,11 +248,14 @@ def run_retriever_comparison(
     base_chain: Any | None = None,
     retriever_types: tuple[str, ...] = RETRIEVER_TYPES,
     output_path: str = "results/benchmark_retriever.json",
+    n_questions: int | None = None,
+    dataset_path: str | None = None,
 ) -> list[ExperimentResult]:
     """Benchmark 2: compare bm25, dense, and hybrid retrieval."""
     if base_chain is None:
         base_chain = MockChain()
 
+    n = n_questions if n_questions is not None else len(dataset)
     logger.info("Benchmark 2 — Retriever comparison: %s", retriever_types)
     results = []
     for mode in retriever_types:
@@ -249,7 +269,13 @@ def run_retriever_comparison(
         results.append(result)
         logger.info("  %-8s answer_relevancy=%s", mode, result.answer_relevancy)
 
-    save_benchmark_results(results, output_path, extra={"benchmark": "retriever_comparison"})
+    extra: dict[str, Any] = {
+        "benchmark_name": "retriever_comparison",
+        "n_questions": n,
+    }
+    if dataset_path:
+        extra["dataset_path"] = dataset_path
+    save_benchmark_results(results, output_path, extra=extra)
     return results
 
 
@@ -297,19 +323,18 @@ def run_full_suite(
     base_chain: Any | None = None,
 ) -> dict[str, list[ExperimentResult]]:
     """Run benchmarks 1, 2, and 3 in sequence."""
-    ts = time.strftime("%Y%m%d_%H%M%S")
     return {
         "rag_comparison": run_rag_comparison(
             dataset, standard_chain, autorag_chain,
-            output_path=os.path.join(output_dir, f"benchmark_rag_comparison_{ts}.json"),
+            output_path=os.path.join(output_dir, "benchmark_rag_comparison.json"),
         ),
         "retriever": run_retriever_comparison(
             dataset, base_chain,
-            output_path=os.path.join(output_dir, f"benchmark_retriever_{ts}.json"),
+            output_path=os.path.join(output_dir, "benchmark_retriever.json"),
         ),
         "chunk": run_chunk_comparison(
             dataset, base_chain,
-            output_path=os.path.join(output_dir, f"benchmark_chunk_{ts}.json"),
+            output_path=os.path.join(output_dir, "benchmark_chunk_size.json"),
         ),
     }
 
@@ -334,21 +359,27 @@ def main() -> None:
     with open(args.dataset) as f:
         dataset = json.load(f)
 
-    ts = time.strftime("%Y%m%d_%H%M%S")
+    n = len(dataset)
+    output_dir = args.output_dir
+
     if args.benchmark in ("all", "rag"):
         run_rag_comparison(
             dataset,
-            output_path=os.path.join(args.output_dir, f"benchmark_rag_comparison_{ts}.json"),
+            output_path=os.path.join(output_dir, "benchmark_rag_comparison.json"),
+            n_questions=n,
+            dataset_path=args.dataset,
         )
     if args.benchmark in ("all", "retriever"):
         run_retriever_comparison(
             dataset,
-            output_path=os.path.join(args.output_dir, f"benchmark_retriever_{ts}.json"),
+            output_path=os.path.join(output_dir, "benchmark_retriever.json"),
+            n_questions=n,
+            dataset_path=args.dataset,
         )
     if args.benchmark in ("all", "chunk"):
         run_chunk_comparison(
             dataset,
-            output_path=os.path.join(args.output_dir, f"benchmark_chunk_{ts}.json"),
+            output_path=os.path.join(output_dir, "benchmark_chunk_size.json"),
         )
 
 

@@ -10,6 +10,8 @@ import logging
 import time
 from typing import Any
 
+from graph.nodes.faithfulness_node import check_faithfulness
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,6 +48,9 @@ class StandardRAGChain:
         ]
         answer = self._generate(query, chunks)
 
+        # Use heuristic faithfulness (no extra LLM call) to keep generation LLM usage isolated.
+        faithfulness_result = check_faithfulness(query, answer, contexts, llm=None)
+
         return {
             "answer": answer,
             "contexts": contexts,
@@ -53,6 +58,9 @@ class StandardRAGChain:
             "retriever_type": retrieval_mode,
             "top_k": top_k,
             "latency_seconds": time.monotonic() - t0,
+            "faithfulness_result": faithfulness_result,
+            "faithfulness_score": faithfulness_result["confidence"] if faithfulness_result["faithful"] else 0.0,
+            "unsupported_claims": faithfulness_result.get("unsupported_claims", []),
         }
 
     def _retrieve(

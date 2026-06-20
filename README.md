@@ -1,37 +1,30 @@
 # AutoRAG — Self-Reflective Retrieval-Augmented Generation
 
-Açık erişimli akademik makaleler üzerinde çalışan, retrieval kalitesini kendi değerlendiren ve gerekirse sorguyu yeniden yazarak tekrar retrieval yapan **Self-Reflective Auto-RAG** sistemi.
+**Self-Reflective Auto-RAG: Açık Erişimli Akademik Makaleler Üzerinde Otonom Hata Denetimi ve Parametrik Performans Analizi**
+
+Açık erişimli akademik makaleler üzerinde çalışan, retrieval kalitesini kendi değerlendiren, gerekirse sorguyu yeniden yazarak tekrar retrieval yapan ve üretilen cevabın bağlamla tutarlılığını (faithfulness) denetleyen **Self-Reflective Auto-RAG** sistemi.
 
 ---
 
-## Proje Amacı
+## Project Overview
 
-Geleneksel RAG sistemleri, bir kez retrieval yaptıktan sonra elde ettikleri bağlamla cevap üretir. Bu sistemde:
+Geleneksel RAG sistemleri, bir kez retrieval yaptıktan sonra elde ettikleri bağlamla cevap üretir. Bu projede:
 
 1. Kullanıcı sorgusu ArXiv ve CORE API üzerinden ilgili makaleler getirilerek yanıtlanmaya çalışılır.
 2. Retrieval sonucu bir **grade node** tarafından LLM ile değerlendirilir (relevant / not relevant).
-3. Sonuç yetersizse sorgu **rewrite node** tarafından yeniden yazılır ve retrieval tekrarlanır.
+3. Sonuç yetersizse sorgu **rewrite node** tarafından yeniden yazılır ve retrieval tekrarlanır (self-reflection loop).
 4. Yeterli bağlam bulununca **generate node** nihai cevabı ve atıfları üretir.
-5. Tüm süreç [RAGAS](https://github.com/explodinggradients/ragas) metrikleriyle değerlendirilir.
+5. **Faithfulness node** üretilen cevabın retrieval edilen bağlamla desteklenip desteklenmediğini denetler.
+6. Tüm süreç [RAGAS](https://github.com/explodinggradients/ragas) metrikleriyle değerlendirilir.
 
 ---
 
-## Sistem Mimarisi
+## Architecture
 
 ```
 Kullanıcı Sorgusu
        │
        ▼
-┌─────────────────┐
-│  Data Fetching  │  arxiv_fetcher + core_fetcher → PaperMetadata
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│    Chunking     │  RecursiveCharacterTextSplitter → Chunk[]
-└────────┬────────┘
-         │
-         ▼
 ┌─────────────────────────────┐
 │  Hybrid Retrieval           │
 │  Dense (FAISS/ChromaDB)     │
@@ -49,25 +42,59 @@ Kullanıcı Sorgusu
     │             │
     ▼             ▼
 ┌────────┐  ┌─────────────┐
-│Generate│  │Rewrite Node │ → tekrar Retrieve (max 3 iterasyon)
+│Generate│  │Rewrite Node │ → tekrar Retrieve (max 2 iterasyon)
 │  Node  │  └─────────────┘
 └────┬───┘
      │
      ▼
-Cevap + Atıflar + RAGAS Metrikleri
+┌──────────────────┐
+│ Faithfulness Node│  LLM veya heuristic → {faithful, confidence, unsupported_claims}
+└────────┬─────────┘
+         │
+         ▼
+Cevap + Atıflar + RAGAS Metrikleri + Faithfulness
 ```
 
 **Modüller:**
 
 | Klasör | Sorumluluk |
 |--------|------------|
-| `data/` | ArXiv & CORE API'den makale çekme, PDF indirme |
+| `data/` | ArXiv & CORE API'den makale çekme, PDF indirme, `qa_dataset.json` |
 | `vectordb/` | ChromaDB ve FAISS vektör depo adaptörleri |
 | `retrieval/` | BM25 sparse retrieval, RRF fusion |
-| `graph/` | LangGraph state, grade node, generate node |
-| `eval/` | RAGAS değerlendirme, dense vs hybrid karşılaştırma |
-| `ui/` | Streamlit arayüzü (sorgu, iz takibi, dashboard) |
+| `graph/` | LangGraph state, grade, generate, rewrite, faithfulness node'ları |
+| `eval/` | RAGAS değerlendirme, dataset loader, benchmark runner |
+| `paper_assets/` | Methodology diagram (Mermaid) |
+| `ui/` | Streamlit arayüzü (sorgu, iz takibi, dashboard, CSV download) |
 | `tests/` | pytest tabanlı birim ve entegrasyon testleri |
+
+---
+
+## Dataset Format
+
+`data/qa_dataset.json` — 30 akademik Q&A sorusu. Her kayıt aşağıdaki alanları taşır:
+
+```json
+{
+  "id": "q001",
+  "question": "What is Retrieval-Augmented Generation (RAG)?",
+  "ground_truth": "RAG is a technique that combines retrieval ...",
+  "expected_source": "RAG paper (Lewis et al., 2020)",
+  "topic": "RAG",
+  "difficulty": "easy"
+}
+```
+
+Konular: RAG, dense retrieval, BM25, hybrid retrieval, query rewriting, faithfulness, context precision, context recall, vector database, chunking, top-k retrieval.
+
+Dataset yüklemek ve doğrulamak için:
+
+```python
+from eval.dataset_loader import load_qa_dataset, validate_qa_dataset
+
+samples = load_qa_dataset("data/qa_dataset.json")
+validate_qa_dataset(samples)   # raises ValueError on issues
+```
 
 ---
 
@@ -87,12 +114,8 @@ cd autoRAG
 
 # 2. Sanal ortam oluştur
 python -m venv venv
-
-# macOS / Linux
-source venv/bin/activate
-
-# Windows
-venv\Scripts\activate
+source venv/bin/activate   # macOS / Linux
+# venv\Scripts\activate   # Windows
 
 # 3. Bağımlılıkları yükle
 pip install -r requirements.txt
@@ -107,90 +130,216 @@ cp .env.example .env
 `.env` dosyasını düzenle:
 
 ```
-API_KEY_ARXIV=your_arxiv_api_key      # Opsiyonel — anonim erişim çalışır
+OPENAI_API_KEY=your_openai_api_key    # Grade, Generate, Faithfulness node'ları için
 CORE_API_KEY=your_core_api_key        # https://core.ac.uk/services/api
-OPENAI_API_KEY=your_openai_api_key    # Grade ve Generate node'ları için
 ```
 
 ---
 
-## Test Çalıştırma
+## Running Standard vs Auto-RAG Benchmark
+
+Standard RAG (Question → Retriever → Top-k chunks → Generate → Answer + sources) ile
+Self-Reflective Auto-RAG (Question → Retrieve → Grade → Rewrite if needed → Generate → Faithfulness → Answer + sources + metrics) karşılaştırması:
 
 ```bash
-python -m pytest
+python -m eval.benchmark_runner --dataset data/qa_dataset.json --benchmark rag
 ```
 
-Belirli bir modülü test etmek için:
+Çıktı: `results/benchmark_rag_comparison.json`
 
-```bash
-python -m pytest tests/test_grade_node.py -v
-python -m pytest tests/test_bm25_retriever.py -v
+```json
+{
+  "benchmark_name": "standard_vs_autorag",
+  "dataset_path": "data/qa_dataset.json",
+  "n_questions": 30,
+  "experiments": [
+    {
+      "experiment_name": "standard_rag",
+      "experiment_type": "comparison",
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.0,
+      "context_precision": 0.0,
+      "context_recall": 0.0,
+      "avg_latency_seconds": 0.05,
+      "avg_rewrite_count": 0.0,
+      "n_questions": 30
+    },
+    {
+      "experiment_name": "auto_rag",
+      "avg_rewrite_count": 1.0,
+      ...
+    }
+  ]
+}
 ```
-
-Tüm testler mock kullanır; API anahtarı gerekmez.
 
 ---
 
-## Streamlit UI Çalıştırma
+## Running Retriever Comparison
+
+BM25, dense ve hybrid retriever karşılaştırması:
+
+```bash
+python -m eval.benchmark_runner --dataset data/qa_dataset.json --benchmark retriever
+```
+
+Çıktı: `results/benchmark_retriever.json`
+
+```json
+{
+  "benchmark_name": "retriever_comparison",
+  "dataset_path": "data/qa_dataset.json",
+  "n_questions": 30,
+  "experiments": [
+    {"experiment_name": "retriever_bm25", "experiment_type": "retrieval", "retriever_type": "bm25", ...},
+    {"experiment_name": "retriever_dense", "retriever_type": "dense", ...},
+    {"experiment_name": "retriever_hybrid", "retriever_type": "hybrid", ...}
+  ]
+}
+```
+
+---
+
+## Faithfulness Evaluation
+
+`graph/nodes/faithfulness_node.py` üretilen cevabın retrieval edilen bağlamla desteklenip desteklenmediğini kontrol eder.
+
+**LLM varken:** LLM her iddiayı bağlamda arar ve desteklenmeyen iddiaları listeler.
+
+**LLM yoksa (fallback heuristic):** Cevap ve bağlam arasındaki token örtüşme oranına göre güven skoru hesaplanır.
+
+```python
+from graph.nodes.faithfulness_node import check_faithfulness
+
+result = check_faithfulness(
+    question="What is BM25?",
+    answer="BM25 is a ranking function based on term frequency.",
+    contexts=["BM25 (Best Match 25) is a probabilistic ranking function ..."],
+    llm=None,   # None → fallback heuristic
+)
+# result: {"faithful": True, "confidence": 0.72, "unsupported_claims": [], "reasoning": "..."}
+```
+
+Her `AutoRAGChain.run()` ve `StandardRAGChain.run()` çağrısı otomatik olarak `faithfulness_result`, `faithfulness_score`, `unsupported_claims` alanlarını döndürür.
+
+---
+
+## Results JSON Format
+
+Tüm deney çıktıları `results/` klasörüne JSON olarak yazılır. Her dosya `experiments` listesi içerir:
+
+```json
+{
+  "benchmark_name": "...",
+  "dataset_path": "...",
+  "n_questions": 30,
+  "timestamp": "2026-06-20T10:00:00",
+  "experiments": [
+    {
+      "experiment_name": "...",
+      "experiment_type": "...",
+      "timestamp": "...",
+      "model_name": null,
+      "retriever_type": null,
+      "chunk_size": null,
+      "top_k": null,
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": null,
+      "context_recall": null,
+      "avg_latency_seconds": 0.05,
+      "avg_rewrite_count": 0.0,
+      "n_questions": 30
+    }
+  ]
+}
+```
+
+---
+
+## Streamlit Dashboard
 
 ```bash
 streamlit run ui/app.py
 ```
 
-Arayüz beş sayfadan oluşur (sol sidebar'dan seçilir):
-
 | Sayfa | İçerik |
 |-------|--------|
-| **RAG Sorgusu** | Sorgu, retrieval izi (chunk → grade → rewrite), cevap + atıflar |
-| **Metrics Dashboard** | `results/*.json` dosyalarından RAGAS metrikleri, latency, rewrite grafikleri |
+| **RAG Sorgusu** | Sorgu, retrieval izi (chunk → grade → rewrite → faithfulness), cevap + atıflar |
+| **Metrics Dashboard** | `results/*.json` dosyalarından RAGAS metrikleri, faithfulness, latency grafikleri + CSV download |
 | **Model Comparison** | Model bazlı faithfulness / relevancy / maliyet karşılaştırması |
-| **Benchmark Results** | Standard vs Auto-RAG · Retriever · Chunk Size · Top-k sekmeleri |
+| **Benchmark Results** | Standard vs Auto-RAG · Retriever · Chunk Size · Top-k sekmeleri + CSV download |
 | **Retrieved Sources** | Son sorgudaki chunk'lar, skorlar, makale linkleri ve atıf listesi |
+
+Her iki benchmark sayfası (Metrics Dashboard ve Benchmark Results) CSV indirme butonu içerir.
 
 ---
 
-## Deneyleri Çalıştırma
+## Methodology Diagram
 
-### Veri Seti
+Mermaid formatında diyagram: `paper_assets/methodology_diagram.mmd`
 
-`data/test_queries.json` — 25 akademik Q&A sorusu (RAG, BM25, Hybrid, Faithfulness vb. konuları kapsar). Tüm `--dataset` / `--queries` parametreleri bu dosyayı gösterir.
-
-### RAGAS Değerlendirme (Standard RAG vs Auto-RAG)
+PNG çıktısı üretmek için (mmdc CLI gereklidir):
 
 ```bash
-python -m eval.eval_runner --dataset data/test_queries.json --output results/eval.json
+npx -p @mermaid-js/mermaid-cli mmdc \
+  -i paper_assets/methodology_diagram.mmd \
+  -o paper_assets/methodology_diagram.png
 ```
 
-### Retrieval Karşılaştırması
+Diyagram iki akışı gösterir:
+- **A) Standard RAG:** Question → Retriever → Top-k Contexts → Generator → Answer + Sources
+- **B) Self-Reflective Auto-RAG:** Question → Retriever → Retrieved Contexts → Relevance Grader → (düşük relevance → Query Rewriter → Retriever; yeterli → Generator → Faithfulness Checker → Answer + Sources + Metrics)
 
-```bash
-python -m eval.retrieval_experiment --retrieval-mode dense   --queries data/test_queries.json
-python -m eval.retrieval_experiment --retrieval-mode hybrid  --queries data/test_queries.json
-```
+---
 
-### Chunk Size Karşılaştırması
-
-```bash
-python -m eval.chunking_experiment --chunk-size 512  --dataset data/test_queries.json
-python -m eval.chunking_experiment --chunk-size 1024 --dataset data/test_queries.json
-```
-
-### Top-k Karşılaştırması
-
-```bash
-python -m eval.topk_experiment --dataset data/test_queries.json
-```
-
-### Model Karşılaştırması
-
-```bash
-python -m eval.model_comparison --dataset data/test_queries.json --models gpt-4o-mini gpt-4o
-```
+## Deneyleri Çalıştırma / Reproducing Experiments
 
 ### Tüm Benchmark Suite
 
 ```bash
-python -m eval.benchmark_runner --dataset data/test_queries.json --benchmark all
+python -m eval.benchmark_runner --dataset data/qa_dataset.json --benchmark all
+```
+
+### Bireysel Benchmark'lar
+
+```bash
+# Standard RAG vs Auto-RAG
+python -m eval.benchmark_runner --dataset data/qa_dataset.json --benchmark rag
+
+# Retriever karşılaştırması (BM25 / Dense / Hybrid)
+python -m eval.benchmark_runner --dataset data/qa_dataset.json --benchmark retriever
+
+# Chunk size karşılaştırması (256 / 512 / 1024 / 2048)
+python -m eval.benchmark_runner --dataset data/qa_dataset.json --benchmark chunk
+```
+
+### RAGAS Değerlendirme (Standard RAG vs Auto-RAG)
+
+```bash
+python -m eval.eval_runner --dataset data/qa_dataset.json --output results/eval.json
+```
+
+### Top-k ve Model Karşılaştırması
+
+```bash
+python -m eval.topk_experiment --dataset data/qa_dataset.json
+python -m eval.model_comparison --dataset data/qa_dataset.json --models gpt-4o-mini gpt-4o
+```
+
+### Test Çalıştırma
+
+```bash
+python -m pytest
+```
+
+Belirli bir modül:
+
+```bash
+python -m pytest tests/test_faithfulness_node.py -v
+python -m pytest tests/test_dataset_loader.py -v
+python -m pytest tests/test_benchmark_rag_comparison.py -v
+python -m pytest tests/test_retriever_comparison_benchmark.py -v
 ```
 
 ---
@@ -203,44 +352,7 @@ python -m eval.benchmark_runner --dataset data/test_queries.json --benchmark all
 | **Answer Relevancy** | Cevabın kullanıcı sorusuna ne kadar ilgili olduğu |
 | **Context Precision** | Retrieval edilen chunk'ların soruyla ilgili olanların oranı |
 | **Context Recall** | Cevap için gereken bilgilerin retrieval ile ne kadarının bulunduğu |
-
-Tüm metrikler 0–1 aralığında; 1 en iyi değerdir.
-
----
-
-## Sonuç Dosyaları
-
-Tüm deney çıktıları `results/` klasörüne zaman damgalı JSON olarak yazılır:
-
-```
-results/
-├── benchmark_rag_comparison.json   # Standard RAG vs Auto-RAG
-├── benchmark_retriever.json        # bm25 / dense / hybrid karşılaştırması
-├── benchmark_chunk.json            # chunk size 256/512/1024/2048
-├── benchmark_topk.json             # top-k 3/5/10/15
-└── benchmark_models.json           # model karşılaştırması
-```
-
-Her JSON dosyası `experiments` listesi içerir; her satır aşağıdaki alanları taşır:
-
-```json
-{
-  "experiment_name": "retriever_hybrid",
-  "experiment_type": "retrieval",
-  "timestamp": "2025-01-01T12:00:00",
-  "model_name": null,
-  "retriever_type": "hybrid",
-  "chunk_size": null,
-  "top_k": 5,
-  "faithfulness": 0.85,
-  "answer_relevancy": 0.88,
-  "context_precision": 0.76,
-  "context_recall": 0.71,
-  "avg_latency_seconds": 0.12,
-  "avg_rewrite_count": 0.0,
-  "n_questions": 25
-}
-```
+| **Faithfulness Score** | Heuristic veya LLM tabanlı faithfulness güven skoru (0–1) |
 
 ---
 

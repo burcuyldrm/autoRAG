@@ -14,6 +14,10 @@ class GraphState(TypedDict, total=False):
     final_answer: str
     sources: list[dict[str, Any]]
     iteration: int
+    # Faithfulness evaluation fields
+    faithfulness_result: dict[str, Any]
+    faithfulness_score: float
+    unsupported_claims: list[str]
 
 
 class GradeResult(TypedDict):
