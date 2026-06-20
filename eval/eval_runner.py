@@ -68,15 +68,21 @@ def run_chain_on_dataset(
 
 
 def compute_ragas_metrics(records: list[dict[str, Any]]) -> dict[str, float]:
-    """Compute RAGAS metrics using the ragas library."""
+    """Compute RAGAS metrics using local Ollama LLM + sentence-transformers (no API key)."""
     from datasets import Dataset
     from ragas import evaluate
     from ragas.metrics import answer_relevancy, context_precision, faithfulness
+    from app.llm_factory import get_ragas_embeddings, get_ragas_llm
+
+    ragas_llm = get_ragas_llm(fast=True)
+    ragas_embeddings = get_ragas_embeddings()
 
     ds = Dataset.from_list(records)
     result = evaluate(
         ds,
         metrics=[faithfulness, answer_relevancy, context_precision],
+        llm=ragas_llm,
+        embeddings=ragas_embeddings,
     )
     return {
         "faithfulness": float(result["faithfulness"]),

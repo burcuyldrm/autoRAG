@@ -105,12 +105,14 @@ def main() -> None:
         answer_relevancy=score,
         n_questions=len(queries),
     )
-    result_dict = result.to_dict()
-    # Backward-compat keys: dashboard hâlâ bunlara bakıyor
-    result_dict["retrieval_mode"] = args.retrieval_mode
-    result_dict["n_queries"] = len(queries)
-    save_results(result_dict, args.output)
-    print(json.dumps(result_dict, indent=2))
+    output = {
+        "benchmark_name": "retrieval_comparison",
+        "dataset_path": args.queries,
+        "n_questions": len(queries),
+        "experiments": [result.to_dict()],
+    }
+    save_results(output, args.output)
+    print(json.dumps(output, indent=2))
 
 
 if __name__ == "__main__":

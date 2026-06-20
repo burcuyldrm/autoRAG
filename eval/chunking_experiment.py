@@ -98,10 +98,14 @@ def main() -> None:
         answer_relevancy=score,
         n_questions=len(queries),
     )
-    result_dict = result.to_dict()
-    result_dict["chunk_size_label"] = str(args.chunk_size)
-    save_results(result_dict, args.output)
-    print(json.dumps(result_dict, indent=2))
+    output = {
+        "benchmark_name": "chunking_comparison",
+        "dataset_path": args.dataset,
+        "n_questions": len(queries),
+        "experiments": [result.to_dict()],
+    }
+    save_results(output, args.output)
+    print(json.dumps(output, indent=2))
 
 
 if __name__ == "__main__":

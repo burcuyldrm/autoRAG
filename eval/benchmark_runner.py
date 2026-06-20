@@ -22,6 +22,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import time
 from typing import Any
 
@@ -29,6 +30,18 @@ from eval.eval_runner import run_chain_on_dataset
 from eval.metrics_schema import ExperimentResult
 
 logger = logging.getLogger(__name__)
+
+_GLOBAL_SEED = 42
+
+
+def _set_seed(seed: int = _GLOBAL_SEED) -> None:
+    """Fix random seeds for reproducible experiment results."""
+    random.seed(seed)
+    try:
+        import numpy as np
+        np.random.seed(seed)
+    except ImportError:
+        pass
 
 RETRIEVER_TYPES: tuple[str, ...] = ("bm25", "dense", "hybrid")
 CHUNK_SIZES: tuple[int, ...] = (256, 512, 1024, 2048)
@@ -162,6 +175,7 @@ def run_single_experiment(
     top_k: int | None = None,
 ) -> ExperimentResult:
     """Run chain on dataset, compute RAGAS metrics, return ExperimentResult."""
+    _set_seed()
     records = run_chain_on_dataset(chain, dataset)
     metrics = compute_ragas_metrics_safe(records)
 
