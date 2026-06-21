@@ -24,4 +24,5 @@ class VectorRetriever:
 
         return top_chunks
 
-
+        scores.sort(key=lambda x: x[0], reverse=True)
+        return [chunk for _, chunk in scores[:k]]

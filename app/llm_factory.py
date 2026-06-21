@@ -1,53 +1,63 @@
-"""
-LLM factory — returns a locally-running Ollama model.
-
-All LLM-dependent components (grade, generate, rewrite, faithfulness, RAGAS)
-use this factory so that the entire pipeline runs without any API key.
-
-Environment variables (all optional):
-    OLLAMA_MODEL       — model for generation          (default: deepseek-r1:7b)
-    OLLAMA_FAST_MODEL  — model for grading/rewriting   (default: qwen2.5:3b)
-    OLLAMA_BASE_URL    — Ollama server URL             (default: http://localhost:11434)
-"""
 from __future__ import annotations
 
-import logging
 import os
+import logging
 
 logger = logging.getLogger(__name__)
 
-_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
-_MODEL = os.environ.get("OLLAMA_MODEL", "deepseek-r1:7b")
-_FAST_MODEL = os.environ.get("OLLAMA_FAST_MODEL", "qwen2.5:3b")
+# Priority order: OpenAI → Gemini → Ollama (local, no API key)
+# Set OLLAMA_MODEL in .env to activate local DeepSeek/any Ollama model.
+# Set OLLAMA_FAST_MODEL for lightweight grade/rewrite nodes (default: qwen2.5:3b).
 
 
-def get_llm(fast: bool = False):
-    """Return a ChatOllama instance.
+def get_llm(temperature: float = 0):
+    if os.environ.get("OPENAI_API_KEY"):
+        from langchain_openai import ChatOpenAI
+        model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+        logger.info("Using OpenAI: %s", model)
+        return ChatOpenAI(model=model, temperature=temperature)
 
-    Parameters
-    ----------
-    fast : bool
-        If True, use OLLAMA_FAST_MODEL (smaller, quicker).
-        If False, use OLLAMA_MODEL (larger, better quality).
-    """
+    if os.environ.get("GOOGLE_API_KEY"):
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        logger.info("Using Gemini: %s", model)
+        return ChatGoogleGenerativeAI(
+            model=model,
+            temperature=temperature,
+            google_api_key=os.environ["GOOGLE_API_KEY"],
+        )
+
+    ollama_model = os.environ.get("OLLAMA_MODEL", "deepseek-r1:7b")
+    ollama_base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
     from langchain_ollama import ChatOllama
+    logger.info("Using Ollama (local): %s @ %s", ollama_model, ollama_base)
+    return ChatOllama(model=ollama_model, base_url=ollama_base, temperature=temperature)
 
-    model = _FAST_MODEL if fast else _MODEL
-    logger.info("LLM factory: ChatOllama(model=%r, base_url=%r)", model, _BASE_URL)
-    return ChatOllama(model=model, base_url=_BASE_URL, temperature=0)
+
+def get_fast_llm(temperature: float = 0):
+    """Lightweight LLM for grade/rewrite nodes."""
+    if os.environ.get("OPENAI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
+        return get_llm(temperature)
+
+    fast_model = os.environ.get("OLLAMA_FAST_MODEL", "qwen2.5:3b")
+    ollama_base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    from langchain_ollama import ChatOllama
+    logger.info("Using fast Ollama (local): %s @ %s", fast_model, ollama_base)
+    return ChatOllama(
+        model=fast_model,
+        base_url=ollama_base,
+        temperature=temperature,
+        num_predict=200,
+    )
 
 
 def get_ragas_llm(fast: bool = True):
-    """Return a RAGAS-compatible LLM wrapper backed by Ollama."""
     from ragas.llms import LangchainLLMWrapper
-
-    return LangchainLLMWrapper(get_llm(fast=fast))
+    return LangchainLLMWrapper(get_fast_llm() if fast else get_llm())
 
 
 def get_ragas_embeddings():
-    """Return a RAGAS-compatible embedding wrapper backed by sentence-transformers."""
     from langchain_community.embeddings import HuggingFaceEmbeddings
     from ragas.embeddings import LangchainEmbeddingsWrapper
-
     hf = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     return LangchainEmbeddingsWrapper(hf)

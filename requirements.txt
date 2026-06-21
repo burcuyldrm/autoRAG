@@ -9,17 +9,18 @@ PyMuPDF
 # Text processing
 langchain
 langchain-community
+langchain-openai
+langchain-anthropic
+langchain-google-genai
 langchain-ollama
 langchain-text-splitters
-# langchain-openai  # not used; kept for reference only
-
-# Embeddings
-sentence-transformers
 
 # Vector databases
 chromadb
 faiss-cpu
 
+# Embeddings
+sentence-transformers
 
 # Sparse retrieval
 rank_bm25
@@ -40,7 +41,6 @@ python-dotenv
 pydantic
 fastapi
 uvicorn
-
 
 # Testing
 pytest
