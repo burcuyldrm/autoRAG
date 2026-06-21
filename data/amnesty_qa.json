@@ -1,0 +1,82 @@
+[
+  {
+    "question": "What are the global implications of the USA Supreme Court ruling on abortion?",
+    "ground_truth": "The global implications of the USA Supreme Court ruling on abortion are significant. The ruling has led to limited or no access to abortion for one in three women and girls of reproductive age in states where abortion access is restricted. These states also have weaker maternal health support, higher maternal death rates, and higher child poverty rates. Additionally, the ruling has had an impact beyond national borders due to the USA's geopolitical and cultural influence globally. Organizations and activists worldwide are concerned that the ruling may inspire anti-abortion legislative and policy attacks in other countries. The ruling has also hindered progressive law reform and the implementation of abortion guidelines in certain African countries. Furthermore, the ruling has created a chilling effect in international policy spaces, empowering anti-abortion actors to undermine human rights protections."
+  },
+  {
+    "question": "Which companies are the main contributors to GHG emissions and their role in global warming according to the Carbon Majors database?",
+    "ground_truth": "According to the Carbon Majors database, the main contributors to GHG emissions and their role in global warming are fossil fuel companies. These companies, both state-owned and private, have produced almost a trillion tons of GHG emissions in 150 years. The database shows that 100 existing fossil fuel companies, along with eight that no longer exist, are responsible for 71% of all GHG emissions since 1988. In the Americas, the private companies that have contributed the most emissions are ExxonMobil, Chevron, and Peabody, all from the United States. Among state-owned companies in the Americas, the largest emitter is Mexican company Pemex, followed by Venezuelan company Petróleos de Venezuela, S.A. It is important to note that while people with fewer resources, particularly from countries in the global South, do not significantly contribute to climate change, they are the ones most affected by its impacts. Approximately half of the global population lives in areas that are \"very vulnerable\" to climate change, and it is people with limited development opportunities who face the greatest risks. This unequal impact disproportionately affects the human rights of those with fewer resources and greater vulnerability in the context of climate change in the global South. Additionally, between 2010 and 2020, human mortality due to climate disasters was 15 times higher in vulnerable regions and populations."
+  },
+  {
+    "question": "Which private companies in the Americas are the largest GHG emitters according to the Carbon Majors database?",
+    "ground_truth": "The largest private companies in the Americas that are the largest GHG emitters according to the Carbon Majors database are ExxonMobil, Chevron, and Peabody."
+  },
+  {
+    "question": "What action did Amnesty International urge its supporters to take in response to the killing of the Ogoni 9?",
+    "ground_truth": "Amnesty International urged its supporters to send appeals for the defenders' freedom to Nigerian authorities and later to send letters of outrage."
+  },
+  {
+    "question": "What are the recommendations made by Amnesty International to the Special Rapporteur on Human Rights Defenders?",
+    "ground_truth": "The recommendations made by Amnesty International to the Special Rapporteur on Human Rights Defenders include embedding a focus on child and young HRDs in future work, raising awareness about the differences and challenges they face, incorporating age disaggregated data in reports, and creating safe spaces for engagement."
+  },
+  {
+    "question": "Who are the target audience of the two books created by Amnesty International on child rights?",
+    "ground_truth": "The target audience of the two books created by Amnesty International on child rights are children and young people."
+  },
+  {
+    "question": "Which right guarantees access to comprehensive information about past human rights violations, including the identities of the perpetrators and the fate of the victims, as well as the circumstances surrounding the violations?",
+    "ground_truth": "The right that guarantees access to comprehensive information about past human rights violations, including the identities of the perpetrators and the fate of the victims, as well as the circumstances surrounding the violations, is the right to know the truth."
+  },
+  {
+    "question": "Who has the right to be fully informed about human rights violations, including the identities of the perpetrators and the fate of the victims?",
+    "ground_truth": "The victims of gross human rights violations and their families, as well as members of society generally, have the right to be fully informed about human rights violations, including the identities of the perpetrators and the fate of the victims."
+  },
+  {
+    "question": "When can individuals be found guilty under Article 207.3 of the Russian Criminal Code?",
+    "ground_truth": "Individuals can be found guilty under Article 207.3 of the Russian Criminal Code if their statements are contrary to the official position of the Russian authorities."
+  },
+  {
+    "question": "When does the prosecution consider statements contrary to the official position as 'false' under Article 207.3?",
+    "ground_truth": "The prosecution considers statements contrary to the official position as 'false' under Article 207.3 when they are in opposition to the official position of the Russian authorities."
+  },
+  {
+    "question": "What factors have contributed to the decline of independent civil society organizations in Nicaragua?",
+    "ground_truth": "The factors that have contributed to the decline of independent civil society organizations in Nicaragua include arrests and harassment of human rights defenders, restrictive NGO laws, violent repression of protests, closure of civil society organizations and community centers, expropriation of belongings and premises, criminalization of social organizing and mobilization, restrictions on freedom of expression, implementation of repressive laws, constant threats of arrest and detention, restrictions on social media, and the imposition of silence through violence and repression."
+  },
+  {
+    "question": "What conditions designate wetlands as Ramsar sites?",
+    "ground_truth": "The conditions that designate wetlands as Ramsar sites are when they fulfill the criteria for identifying wetlands of international importance, as established under the Convention on Wetlands."
+  },
+  {
+    "question": "Where was COP15 held in 2022?",
+    "ground_truth": "COP15 was held in Montreal, Canada in 2022."
+  },
+  {
+    "question": "What is the purpose of the agreement known as 30x30?",
+    "ground_truth": "The purpose of the agreement known as 30x30 is to designate 30% of the world's land and sea masses as protected areas for biodiversity conservation by 2030."
+  },
+  {
+    "question": "Who failed to explicitly recognize Indigenous Peoples' lands and territories as a distinct category of protected area at COP15?",
+    "ground_truth": "The States failed to explicitly recognize Indigenous Peoples' lands and territories as a distinct category of protected area at COP15."
+  },
+  {
+    "question": "What are the consequences of criminalizing abortion for marginalized individuals?",
+    "ground_truth": "The consequences of criminalizing abortion for marginalized individuals include increased stigma, lack of information, and disinformation. This can have severe and irreversible effects on these individuals. Girls and young women may be forced to carry pregnancies resulting from sexual violence due to a lack of knowledge about their rights. Marginalized individuals, such as those living in poverty, historically discriminated against, Indigenous and Afro-descendent women, migrants, and refugees, are disproportionately affected by abortion criminalization. The criminalization of abortion is a major factor contributing to the high number of unsafe abortions, which leads to increased maternal mortality and morbidity. Access to health services is undermined, resulting in preventable maternal deaths and complications. Marginalized individuals are forced to resort to unsafe clandestine abortion methods, putting their lives and health at risk. In Nigeria, restrictive abortion laws make it difficult to access safe abortion care."
+  },
+  {
+    "question": "What responsibilities should social media companies have in relation to ensuring access to accurate sexual and reproductive health information?",
+    "ground_truth": "Social media companies should have the responsibility to invest in human oversight of their content moderation systems to ensure equal access to accurate sexual and reproductive health information. They should also engage in human rights due diligence to address risks and abuses related to their business model."
+  },
+  {
+    "question": "What role do social media companies play in protecting users' rights online, regardless of their language and political views?",
+    "ground_truth": "Social media companies play a role in protecting users' rights online, regardless of their language and political views, by investing in human oversight of content moderation systems, engaging in human rights due diligence, and educating users about security and privacy features."
+  },
+  {
+    "question": "What labor abuses were documented by Amnesty International in Qatar and how do they relate to the kafala system?",
+    "ground_truth": "Amnesty International documented labor abuses in Qatar, including workers being permitted only one day off each month, threats of salary cuts for taking more rest time, failure to provide pay slips, and overcrowded and dirty living conditions. These labor abuses relate to the kafala system because the kafala system imposes tight restrictions on migrant workers' freedom of movement and ability to change jobs without their employer's permission. This system allows abusive employers to control their workforce by canceling residence permits, falsely reporting employees as absconding, and using non-compete clauses to prevent workers from changing jobs."
+  },
+  {
+    "question": "When did the government of Qatar start repealing restrictions on migrant workers?",
+    "ground_truth": "The government of Qatar started repealing restrictions on migrant workers between 2018 and 2020."
+  }
+]

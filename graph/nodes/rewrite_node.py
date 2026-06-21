@@ -41,6 +41,16 @@ def rewrite_node(state: GraphState, llm=None) -> GraphState:
     return state
 
 
+def rewrite_query(query: str, reason: str = "", llm=None) -> str:
+    """Convenience wrapper — returns the rewritten query string."""
+    state: GraphState = {
+        "query": query,
+        "grade_result": {"reasoning": reason, "relevant": False, "confidence": 0.0},
+    }
+    result = rewrite_node(state, llm=llm)
+    return result.get("rewritten_query", query)
+
+
 def _default_llm():
     from app.llm_factory import get_fast_llm
     return get_fast_llm()

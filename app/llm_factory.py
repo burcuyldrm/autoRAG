@@ -53,11 +53,30 @@ def get_fast_llm(temperature: float = 0):
 
 def get_ragas_llm(fast: bool = True):
     from ragas.llms import LangchainLLMWrapper
-    return LangchainLLMWrapper(get_fast_llm() if fast else get_llm())
+    from langchain_ollama import ChatOllama
+    ollama_base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    # Use deepseek-r1:7b for RAGAS — qwen2.5:3b with num_predict=200 truncates outputs
+    llm = ChatOllama(model="deepseek-r1:7b", base_url=ollama_base, temperature=0, num_predict=512)
+    return LangchainLLMWrapper(llm)
 
 
 def get_ragas_embeddings():
-    from langchain_community.embeddings import HuggingFaceEmbeddings
     from ragas.embeddings import LangchainEmbeddingsWrapper
-    hf = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    return LangchainEmbeddingsWrapper(hf)
+    from langchain_core.embeddings import Embeddings
+    import ollama as _ollama
+
+    embed_model = os.environ.get("OLLAMA_FAST_MODEL", "qwen2.5:3b")
+    ollama_base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+
+    class _OllamaDirectEmbeddings(Embeddings):
+        """Thin wrapper around the Ollama Python client — no torch dependency."""
+
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            client = _ollama.Client(host=ollama_base)
+            resp = client.embed(model=embed_model, input=texts)
+            return [list(e) for e in resp.embeddings]
+
+        def embed_query(self, text: str) -> list[float]:
+            return self.embed_documents([text])[0]
+
+    return LangchainEmbeddingsWrapper(_OllamaDirectEmbeddings())

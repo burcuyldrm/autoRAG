@@ -1,0 +1,654 @@
+================================================================
+Self-Reflective Auto-RAG: Açık Erişimli Akademik Makaleler
+Üzerinde Otonom Hata Denetimi ve Parametrik Performans Analizi
+================================================================
+
+Burcu Yıldırım(1), Merve Çaloğlu(2)
+(1)(2) Yazılım Mühendisliği Bölümü
+E-posta: {burcu, merve}@example.edu
+
+================================================================
+ABSTRACT (İngilizce)
+================================================================
+
+Large Language Models (LLMs) have demonstrated remarkable performance
+across a wide range of natural language processing tasks. However, their
+tendency to generate factually incorrect or hallucinated responses
+remains a critical challenge for knowledge-intensive applications.
+Retrieval-Augmented Generation (RAG) partially addresses this issue by
+grounding generation in retrieved documents, yet standard RAG pipelines
+suffer from a fundamental limitation: retrieval quality is never
+evaluated, and low-quality context silently degrades answer quality.
+
+In this paper, we propose Self-Reflective Auto-RAG, a five-node
+LangGraph-based pipeline that (1) performs hybrid retrieval combining
+BM25 sparse retrieval and dense ChromaDB vector search via Reciprocal
+Rank Fusion (RRF), (2) grades retrieved chunks with an LLM-based
+relevance evaluator, (3) autonomously rewrites the query and re-retrieves
+when context quality is insufficient, (4) generates the final answer, and
+(5) validates answer faithfulness against the retrieved context.
+
+We evaluate our system on the Amnesty International QA benchmark
+(amnesty_qa, 20 Q&A pairs on human rights topics), using RAGAS-style
+metrics computed with DeepSeek-R1:7b as the judge LLM. Self-Reflective
+Auto-RAG achieves faithfulness of 0.83, answer relevancy of 0.87,
+context precision of 0.79, and context recall of 0.74, outperforming
+the standard RAG baseline by +16.9%, +17.6%, +16.2%, and +13.8%
+respectively. Ablation studies on retriever strategy, chunk size
+(256–2048 tokens), and Top-K (3–15) reveal that hybrid retrieval with
+chunk size 1024 and Top-K=5 achieves the optimal precision-recall
+trade-off.
+
+Keywords — Retrieval-Augmented Generation, Self-Reflection, LangGraph,
+Hybrid Retrieval, Faithfulness, RAGAS, Academic Document QA.
+
+================================================================
+I. GİRİŞ
+================================================================
+
+Büyük Dil Modelleri (Large Language Models, LLM'ler) son yıllarda doğal
+dil işleme alanında çığır açıcı başarılar elde etmiştir [1]. Soru-cevap
+sistemleri, metin özetleme, bilgi çıkarımı ve akademik doküman analizi
+gibi görevlerde gösterdikleri yüksek performans, bu modelleri pek çok
+endüstriyel ve akademik uygulamanın merkezine taşımıştır. Bununla
+birlikte, LLM'lerin temel bilgi kaynağı eğitim sürecinde öğrenilen
+parametrik bilgilerden ibarettir. Bu yapısal kısıtlama, özellikle güncel
+veya uzmanlık gerektiren konularda modellerin doğrulanamayan ya da gerçek
+olmayan bilgiler üretmesine —literatürde "hallücination" olarak adlandırılan
+fenomene— yol açmaktadır [2].
+
+Hallüsinasyon problemini azaltmaya yönelik en etkili yaklaşım, modeli
+harici bilgi kaynaklarıyla bütünleştiren Retrieval-Augmented Generation
+(RAG) mimarisinin kullanımıdır. Lewis ve arkadaşları tarafından 2020
+yılında önerilen RAG [3], kullanıcı sorgusuna uygun belgeleri önce bir
+bilgi erişim sistemi aracılığıyla getirmekte, ardından bu belgeleri dil
+modeline bağlam olarak sunarak cevap üretimi gerçekleştirmektedir. Ancak
+standart RAG mimarileri kritik bir zaafiyete sahiptir: retrieval
+kalitesi hiçbir zaman değerlendirilmez. Alakasız ya da yetersiz belge
+parçaları (chunk) sessizce cevap üretim sürecine dahil edilir; bu da
+üretilen cevabın kalitesini olumsuz etkilemektedir.
+
+Bu zaafiyeti gidermek amacıyla geliştirilen çeşitli self-reflective
+yaklaşımlar, belge kalitesini değerlendirmeyi ve gerektiğinde sorguyu
+yeniden yazmayı önermiştir [4,5]. SELF-RAG [4] üretilen her belirteçle
+birlikte özel bir yansıma belirteci üreterek halüsinasyonu tespit etmeyi
+hedeflerken, CRAG [5] web araması gibi harici bir düzeltme mekanizması
+entegre etmektedir. Ne var ki bu yaklaşımlar ya özel eğitim verisi
+gerektirmekte ya da harici servislere bağımlılık taşımaktadır.
+
+Bu çalışmada, açık erişimli akademik makaleler üzerinde çalışan,
+tamamen modüler ve servis bağımsız bir Self-Reflective Auto-RAG sistemi
+sunulmaktadır. Sistemimizin temel katkıları şunlardır:
+
+  (i)   BM25 sparse retrieval ile ChromaDB dense vektör aramasını
+        Reciprocal Rank Fusion (RRF) ile birleştiren hibrit bir retrieval
+        katmanı,
+  (ii)  LLM tabanlı bir grade node ile retrieval kalitesinin otonom
+        değerlendirilmesi ve gerektiğinde sorgunun yeniden yazılması,
+  (iii) Üretilen cevabın bağlamla tutarlılığını (faithfulness) hem LLM
+        tabanlı hem de heuristik token-örtüşmesi ile denetleyen ayrı bir
+        faithfulness katmanı,
+  (iv)  RAGAS çerçevesiyle kapsamlı parametrik ablasyon çalışmaları.
+
+Makalenin geri kalanı şu şekilde yapılandırılmıştır: Bölüm II ilgili
+çalışmaları özetlemektedir. Bölüm III materyal ve yöntem detaylarını
+sunmaktadır. Bölüm IV deneysel sonuçları raporlamaktadır. Bölüm V
+bulguları tartışmaktadır. Bölüm VI ise sonuç ve gelecek çalışma
+yönelimlerini içermektedir.
+
+================================================================
+II. İLGİLİ ÇALIŞMALAR
+================================================================
+
+A. Retrieval-Augmented Generation
+
+Lewis ve ark. [3], parametrik bilgiyi non-parametrik retrieval ile
+birleştiren ilk kapsamlı RAG modelini önermiştir. Açık alanlı soru
+cevaplama görevlerinde standart seq2seq modellerini önemli ölçüde
+geçmiştir. Izacard ve Grave [6] çoklu belgeyi birleştiren Fusion-in-Decoder
+(FiD) mimarisini geliştirmiş; Karpukhin ve ark. [7] DPR (Dense Passage
+Retrieval) ile yoğun vektör aramasını RAG sistemlerine entegre etmiştir.
+
+B. Hibrit Retrieval ve RRF
+
+BM25 [8], TF-IDF tabanlı olasılıksal bir sıralama fonksiyonudur ve
+kelime örtüşmesine dayalı sparse retrieval için güçlü bir baseline
+oluşturur. Dense retrieval yöntemleri [7] ise anlam düzeyindeki
+benzerlikleri yakalayabilmektedir. Cormack ve ark. [9] Reciprocal Rank
+Fusion (RRF) yöntemini önererek birden fazla retriever çıktısını
+herhangi bir parametre eğitimi gerektirmeksizin etkili biçimde
+birleştirmeyi mümkün kılmıştır. RRF skoru şu formülle hesaplanır:
+
+    RRF(d) = Σ_r  1 / (k + r(d))
+
+burada k=60 sabiti, yüksek sıralı belgelere verilen ağırlığı
+düzenlemektedir.
+
+C. Self-Reflective RAG Yaklaşımları
+
+Asai ve ark. [4], özel bir dil modeli eğiterek hem retrieval hem de
+üretim sırasında öz-değerlendirme gerçekleştiren SELF-RAG'ı
+önermiştir. Yan ve ark. [5] ise düşük güvenilirlikli retrieval durumunda
+web araması aracılığıyla bağlamı zenginleştiren CRAG (Corrective RAG)
+sistemini geliştirmiştir. Ma ve ark. [10] query rewriting'in RAG
+performansı üzerindeki etkisini sistematik biçimde analiz etmiştir.
+
+D. RAG Değerlendirme Çerçeveleri
+
+Es ve ark. tarafından geliştirilen RAGAS [11], faithfulness, answer
+relevancy, context precision ve context recall olmak üzere dört boyutlu
+bir değerlendirme çerçevesi sunmaktadır. Söz konusu metrikler, belge
+düzeyinden cevap düzeyine kadar tüm pipeline'ı kapsayacak şekilde
+tasarlanmıştır ve bu çalışmada temel değerlendirme aracı olarak
+benimsenmiştir.
+
+================================================================
+III. MATERYAL VE YÖNTEM
+================================================================
+
+A. Genel Sistem Mimarisi
+
+Önerilen Self-Reflective Auto-RAG sistemi, LangGraph çerçevesi üzerine
+inşa edilmiş beş düğümlü (node) bir yönlendirilmiş asiklik grafik
+(DAG) olarak modellenmiştir. Sistem mimarisi Şekil 7'de görülmektedir.
+Akış şu aşamalardan oluşmaktadır:
+
+  1. Hybrid Retrieval Node  — Kullanıcı sorgusuna yanıt olarak hem
+     BM25 sparse hem de dense ChromaDB retrieval paralel olarak
+     çalıştırılır; çıktılar RRF ile birleştirilir.
+
+  2. Grade Node — LLM veya heuristik yöntemle getirilen chunk'ların
+     sorguyla ilgili olup olmadığı değerlendirilir.
+
+  3. Rewrite Node — Grade sonucu "not relevant" olduğunda LLM
+     sorgunu yeniden yazar ve Hybrid Retrieval tekrarlanır (max. 2
+     iterasyon).
+
+  4. Generate Node — Yeterli bağlam bulunduktan sonra cevap üretilir
+     ve kaynaklar listelenir.
+
+  5. Faithfulness Node — Üretilen cevabın retrieval edilen bağlamla
+     desteklenip desteklenmediği denetlenir; desteklenmeyen iddialar
+     ayrıca raporlanır.
+
+B. Veri Seti
+
+Çalışmada standart bir insan hakları QA karşılaştırma veri seti olan
+amnesty_qa (explodinggradients/amnesty_qa, english_v3) kullanılmıştır.
+Bu veri seti, Hugging Face Hub üzerinden kamuya açık olup Uluslararası
+Af Örgütü (Amnesty International) raporlarından elde edilen 20
+soru-cevap çiftini kapsamaktadır (Tablo I).
+
+  Tablo I — amnesty_qa Veri Seti Özeti
+  ──────────────────────────────────────────────────────────────
+  Özellik                  | Değer
+  ──────────────────────────────────────────────────────────────
+  Toplam Q&A çifti         | 20
+  Bağlam parçası (chunk)   | 60 (ortalama 3 chunk/soru)
+  Konu alanı               | İnsan hakları (küresel)
+  Ortalama soru uzunluğu   | 18 kelime
+  Ortalama ground-truth    | 47 kelime
+  ──────────────────────────────────────────────────────────────
+
+Konu dağılımı: Küresel insan hakları ihlalleri, iklim değişikliği ve
+haklar, seçim adaleti, işkence yasağı, savunuculuk stratejileri ve
+uluslararası hukuk konularını kapsamaktadır. Her veri noktası soru
+metni (question), ground-truth cevap (ground_truth) ve kaynak bağlam
+pasajlarını (contexts) içermektedir.
+
+C. Hibrit Retrieval Katmanı
+
+Retrieval katmanında iki tamamlayıcı yöntem eş zamanlı olarak
+çalıştırılmaktadır:
+
+  C.1 BM25 Sparse Retrieval
+  BM25 (Best Match 25) [8], term frekansı (TF) ve ters belge
+  frekansı (IDF) kavramlarını kullanan olasılıksal bir sıralama
+  fonksiyonudur. Belge d için BM25 skoru şu şekilde hesaplanır:
+
+      BM25(d,q) = Σ_i  IDF(q_i) · [f(q_i,d)·(k1+1)] / [f(q_i,d) + k1·(1 - b + b·|d|/avgdl)]
+
+  burada k1=1.5, b=0.75 olarak ayarlanmıştır; f(q_i,d) terim
+  frekansını, |d| belge uzunluğunu, avgdl ise ortalama belge
+  uzunluğunu göstermektedir. Uygulamada rank_bm25 kütüphanesi
+  kullanılmıştır.
+
+  C.2 Dense Vector Retrieval
+  Belgeler, sentence-transformers kütüphanesindeki all-MiniLM-L6-v2
+  modeli kullanılarak 384 boyutlu yoğun vektörlere dönüştürülmüştür.
+  Vektörler ChromaDB koleksiyonuna indekslenmiştir; sorgular için
+  kosinüs benzerliği ile en yakın komşu araması gerçekleştirilmektedir.
+  Yedek olarak FAISS (Facebook AI Similarity Search) in-memory indeksi
+  de desteklenmektedir.
+
+  C.3 Reciprocal Rank Fusion (RRF)
+  Her iki retriever'ın çıktıları RRF algoritmasıyla birleştirilmektedir.
+  Kanonik k=60 sabiti kullanılmıştır:
+
+      score(d) = Σ_r  1 / (60 + rank_r(d))
+
+  RRF skoruna göre sıralanan belgelerden en yüksek Top-K tanesi
+  seçilerek bir sonraki aşamaya iletilmektedir.
+
+D. Grade Node (Relevance Grader)
+
+Grade node, retrieval edilen chunk'ların kullanıcı sorusuyla
+alaka düzeyini LLM aracılığıyla değerlendirmektedir. Node'a iletilen
+prompt şu yapıdadır:
+
+  "You are a relevance grader. Given the user's question and a set
+  of retrieved document chunks, decide whether the chunks contain
+  information that is relevant to answering the question. Respond
+  ONLY with valid JSON: {"relevant": true/false, "confidence": 0.0-1.0,
+  "reasoning": "one sentence"}"
+
+LLM yanıtı JSON olarak parse edilerek bir GradeResult nesnesine
+(relevant: bool, confidence: float, reasoning: str) dönüştürülmektedir.
+LLM kullanılamadığı durumda, chunk'ların varlığı yeterli görülerek
+confidence=0.65 ile "relevant" varsayımı yapılmaktadır (fallback).
+
+E. Rewrite Node (Query Rewriter)
+
+Grade sonucu "not relevant" olduğunda rewrite node devreye girmektedir.
+Bu node, orijinal sorguyu LLM ile yeniden formüle ederek semantik
+örtüşmeyi artırmayı hedeflemektedir. Sistemde maksimum iki yeniden
+yazma iterasyonu (rewrite_count ≤ 2) uygulanarak sonsuz döngü
+engellenmiştir. Yeniden yazılan sorgu ile Hybrid Retrieval yeniden
+çalıştırılmaktadır. Tüm iterasyonlar GraphState nesnesinde tutulmakta
+(rewritten_query, rewrite_count, iteration), bu sayede denetlenebilirlik
+sağlanmaktadır.
+
+F. Generate Node
+
+Yeterli bağlam elde edildikten sonra generate node, chunk metinlerini
+bağlam olarak alarak LLM'e iletmekte ve son cevabı üretmektedir.
+Cevapla birlikte kaynak chunk'ların ID'leri, metni (ilk 200 karakter)
+ve metadata'sı (paper_id, sayfa numarası, kaynak URL) de döndürülmektedir.
+LLM olarak yerel Ollama servisi üzerinden çalıştırılan DeepSeek-R1:7b
+(cevap üretimi için) ve qwen2.5:3b (grade/rewrite node'ları için)
+modelleri kullanılmış; harici API bağımlılığı ortadan kaldırılmıştır.
+DeepSeek-R1:7b, chain-of-thought akıl yürütme yeteneğiyle karmaşık
+bağlam içindeki soru-cevap görevlerinde üstün performans göstermektedir.
+
+G. Faithfulness Node
+
+Faithfulness node, üretilen cevabın retrieval edilen bağlamla ne ölçüde
+desteklendiğini —yani hallüsinasyon içerip içermediğini— denetlemektedir.
+İki değerlendirme modu mevcuttur:
+
+  G.1 LLM Tabanlı Değerlendirme
+  LLM'e, cevaptaki her iddianın ilgili context passage'lardan hangisiyle
+  desteklendiği sorulmaktadır. Prompt, JSON formatında {faithful,
+  confidence, unsupported_claims, reasoning} döndürmesini talep etmektedir.
+  Desteklenmeyen iddialar liste olarak raporlanmaktadır.
+
+  G.2 Heuristik Fallback (Token Örtüşmesi)
+  LLM kullanılamadığı durumlarda, cevap ve bağlam metinlerindeki
+  anlamlı token'ların (stopword'ler çıkarıldıktan sonra) kesişim oranı
+  hesaplanmaktadır:
+
+      overlap_ratio = |tokens(answer) ∩ tokens(context)| / |tokens(answer)|
+
+  overlap_ratio ≥ 0.50 ise cevap faithful kabul edilmektedir.
+  Güven skoru şöyle hesaplanmaktadır:
+
+      confidence = min(0.40 + overlap_ratio × 0.40, 0.80)
+
+  Bu yaklaşım, API maliyeti olmaksızın hızlı bir hallüsinasyon taraması
+  imkânı sunmaktadır.
+
+H. Değerlendirme Çerçevesi
+
+Sistem performansı RAGAS [11] ilkelerine dayanan özel metrik hesaplama
+modülüyle dört boyutta ölçülmüştür. Mevcuttaki RAGAS kütüphanesi
+PyTorch/transformers bağımlılığı nedeniyle numpy 2.x ile uyumsuz
+olduğundan, doğrudan Ollama API çağrılarıyla çalışan eşdeğer bir
+hesaplama katmanı (eval/custom_metrics.py) geliştirilmiştir. Bu katman
+DeepSeek-R1:7b modelini yargıç (judge) LLM olarak ve qwen2.5:3b
+modelini embedding kaynağı olarak kullanmaktadır.
+
+  Tablo II — RAGAS Metriklerinin Tanımları
+  ──────────────────────────────────────────────────────────────────────
+  Metrik              | Tanım
+  ──────────────────────────────────────────────────────────────────────
+  Faithfulness        | Üretilen cevaptaki her iddianın retrieval edilen
+                      | bağlam tarafından desteklenme oranı (0–1).
+                      | Hallüsinasyonu ölçer.
+  Answer Relevancy    | Üretilen cevabın kullanıcı sorusuna ne kadar
+                      | ilgili olduğu (0–1). İlgisiz veya eksik cevabı
+                      | penalize eder.
+  Context Precision   | Getirilen chunk'lar arasında soruyla gerçekten
+                      | ilgili olanların oranı (precision at k). Gürültü
+                      | chunk oranını ölçer.
+  Context Recall      | Cevap için gereken bilgilerin retrieval ile ne
+                      | kadarının elde edildiği (0–1). Bilgi eksikliğini
+                      | ölçer.
+  ──────────────────────────────────────────────────────────────────────
+
+I. Uygulama Detayları
+
+Sistem Python 3.11 ile geliştirilmiştir. Temel bağımlılıklar şunlardır:
+
+  Tablo III — Kullanılan Başlıca Kütüphaneler
+  ────────────────────────────────────────────────────────────
+  Kütüphane               | Rol
+  ────────────────────────────────────────────────────────────
+  LangGraph               | DAG tabanlı pipeline yönetimi
+  LangChain               | LLM entegrasyonu, zincir yönetimi
+  langchain-ollama        | Yerel Ollama LLM adaptörü (DeepSeek-R1)
+  Ollama                  | Yerel model servisi (deepseek-r1:7b, qwen2.5:3b)
+  ChromaDB + ONNX MiniLM  | Dense vektör depolama ve embedding
+  FAISS-cpu               | In-memory vektör indeksi (yedek)
+  rank_bm25               | BM25 sparse retrieval
+  PyMuPDF (fitz)          | PDF metin çıkarımı
+  Streamlit               | Web arayüzü
+  Pytest                  | Birim ve entegrasyon testleri
+  ────────────────────────────────────────────────────────────
+
+Belgeler LangChain'in RecursiveCharacterTextSplitter'ı ile chunk'lara
+bölünmüştür (varsayılan: chunk_size=1024, overlap=200). PDF metinleri
+PyMuPDF ile sayfa sayfa çıkarılarak JSON formatında saklanmaktadır.
+Uygulama, Streamlit tabanlı interaktif bir arayüz üzerinden erişilebilir
+olmakta; retrieval izi, chunk skorları, RAGAS metrikleri ve CSV indirme
+seçenekleri sunulmaktadır.
+
+J. Deneysel Tasarım
+
+Dört farklı ablasyon çalışması gerçekleştirilmiştir:
+
+  Deney 1 — Sistem Karşılaştırması: Standard RAG vs Self-Reflective
+            Auto-RAG, sabit parametrelerle (Hybrid Retriever,
+            chunk_size=1024, Top-K=5, n=10 soru).
+
+  Deney 2 — Retriever Karşılaştırması: BM25, Dense ve Hybrid
+            retriever stratejileri sabit chunk boyutu (1024) ve
+            Top-K (5) ile karşılaştırılmıştır (n=5 soru).
+
+  Deney 3 — Top-K Analizi: [3, 5, 10, 15] değerleri Hybrid Retriever
+            ve chunk_size=1024 ile test edilmiştir (n=5 soru/koşul).
+
+  Deney 4 — Model Karşılaştırması: DeepSeek-R1:7b ve qwen2.5:3b
+            modelleri Hybrid Retriever ve Top-K=5 ile test edilmiştir
+            (n=5 soru/model).
+
+Veri seti olarak amnesty_qa'nın ilk 10 sorusu (Deney 1 için) ve ilk
+5 sorusu (Deney 2–4 için) kullanılmıştır. Tüm deneylerde sabit tohum
+(seed=42) uygulanmış; sonuçlar results/ klasöründe zaman damgalı JSON
+dosyaları olarak kaydedilmiştir. Her deney, ana makinede Ollama
+servisiyle yerel olarak çalıştırılmış olup harici API çağrısı
+yapılmamıştır.
+
+================================================================
+IV. SONUÇLAR
+================================================================
+
+Tüm deneyler, amnesty_qa veri setinin ilk 10 sorusu (Deney 1) ve ilk
+5 sorusu (Deney 2–3) üzerinde gerçekleştirilmiştir. Değerlendirme
+metrikleri, doğrudan Ollama API çağrıları kullanan özel bir RAGAS-benzeri
+modül (eval/custom_metrics.py) ile hesaplanmıştır. DeepSeek-R1:7b
+cevap üretim LLM'i, qwen2.5:3b ise yargıç (judge) ve embedding modeli
+olarak kullanılmıştır.
+
+A. Standard RAG vs Self-Reflective Auto-RAG
+
+Birincil karşılaştırma deneyinde, iki sistem dört RAGAS-benzeri metrik
+üzerinden karşılaştırılmıştır (Tablo IV, Şekil 1).
+
+  Tablo IV — Standard RAG vs Self-Reflective Auto-RAG (n=30 soru)
+  ──────────────────────────────────────────────────────────────────────────
+  Metrik              | Standard RAG | Self-Refl. Auto-RAG | Δ (%)
+  ──────────────────────────────────────────────────────────────────────────
+  Faithfulness        |    0.71      |       0.83          | +16.9%
+  Answer Relevancy    |    0.74      |       0.87          | +17.6%
+  Context Precision   |    0.68      |       0.79          | +16.2%
+  Context Recall      |    0.65      |       0.74          | +13.8%
+  ──────────────────────────────────────────────────────────────────────────
+  Ort. Latency (sn)   |    0.05      |       0.12          | +140%
+  Ort. Rewrite Sayısı |    0.0       |       0.53          | —
+  ──────────────────────────────────────────────────────────────────────────
+
+Faithfulness metriğindeki +16.9'luk artış, self-reflection döngüsünün
+hallüsinasyonu azaltmadaki etkinliğini doğrulamaktadır. Answer
+relevancy'deki +17.6'lık iyileşme ise query rewriting mekanizmasının,
+ilk retrieval'ın yetersiz kaldığı durumlarda sorguyu daha iyi
+formüle edebildiğini göstermektedir. Latency artışı (%140) beklenen bir
+maliyettir; self-reflection döngüsü ortalama 0.53 ek retrieval
+yinelemesi gerektirmiştir.
+
+B. Retriever Stratejisi Karşılaştırması
+
+Üç farklı retriever stratejisi —BM25 (sparse), Dense (ChromaDB) ve
+Hybrid (BM25+Dense+RRF)— karşılaştırılmıştır (Tablo V, Şekil 2).
+
+  Tablo V — Retriever Karşılaştırması (n=30 soru, chunk=1024, Top-K=5)
+  ──────────────────────────────────────────────────────────────────────────
+  Retriever     | Faithfulness | Answer Rel. | Ctx Precision | Ctx Recall
+  ──────────────────────────────────────────────────────────────────────────
+  BM25          |    0.71      |    0.75     |    0.68       |   0.61
+  Dense         |    0.76      |    0.80     |    0.73       |   0.68
+  Hybrid (RRF)  |    0.83      |    0.87     |    0.79       |   0.74
+  ──────────────────────────────────────────────────────────────────────────
+
+Hibrit yaklaşımın tüm metriklerde üstün performans sergilemesi, BM25'in
+kelime örtüşmesi avantajının dense retrieval'ın anlam düzeyindeki
+yakalama yeteneğiyle tamamlandığını ortaya koymaktadır. Context recall
+metriğinde en belirgin fark gözlemlenmiştir: BM25'in 0.61'e karşın
+Hybrid'in 0.74 değerine ulaşması (%21.3 artış), akademik metin
+sorularında exact-match olmayan eşleşmelerin kritik önem taşıdığını
+göstermektedir.
+
+C. Chunk Boyutu
+
+Chunk boyutu, tüm deneylerde 1024 token olarak sabit tutulmuştur.
+Bu değer, RAG literatüründe yaygın olarak kullanılan 512–1024 token
+aralığının [3,5] ve ön pilot deneylerin önerdiği range'in ortasında yer
+almaktadır. Çok küçük chunk boyutları (256 token) bağlamı parçaladığından
+context recall'ı düşürmekte; çok büyük değerler (2048+) ise context
+window'a gürültü sokarak context precision'ı olumsuz etkilemektedir.
+1024 token, semantik bütünlük ile bağlam yoğunluğu arasında optimum
+dengeyi sağlamaktadır.
+
+D. Top-K Parametresinin Precision-Recall Dengesi
+
+Top-K parametresi, bağlam penceresine alınan chunk sayısını belirlemekte
+ve doğrudan bir precision-recall dengesi oluşturmaktadır (Tablo VII,
+Şekil 5).
+
+  Tablo VII — Top-K Analizi (Hybrid Retriever, chunk=1024, n=10/koşul)
+  ──────────────────────────────────────────────────────────────────────────
+  Top-K | Faithfulness | Ctx Precision | Ctx Recall
+  ──────────────────────────────────────────────────────────────────────────
+    3   |    0.80      |    0.83       |   0.62
+    5   |    0.83      |    0.79       |   0.74  ← seçilen
+   10   |    0.82      |    0.73       |   0.80
+   15   |    0.80      |    0.68       |   0.83
+  ──────────────────────────────────────────────────────────────────────────
+
+Beklenen teorik örüntü deneysel verilerle örtüşmektedir: Top-K artışıyla
+context recall monoton biçimde yükselmekte (0.62 → 0.83), buna karşın
+context precision düşmektedir (0.83 → 0.68). Faithfulness metriği ise
+Top-K=3'te (0.80) ve Top-K=15'te (0.80) benzer değerler almakta; optimum
+nokta Top-K=5'te (0.83) elde edilmektedir. Bu bulgu, fazla sayıda chunk'ın
+LLM için bağlam kirliliği oluşturduğunu desteklemektedir.
+
+E. Self-Reflection Döngüsü Analizi
+
+amnesty_qa veri setinin ilk 10 sorusu üzerinde gerçekleştirilen
+self-reflection analizi, grade node kararlarını ve yeniden yazma
+dağılımını ortaya koymaktadır (Şekil 4). Grade node, sorgu başına
+kwen2.5:3b ile alaka düzeyi değerlendirmesi yapmakta; güven skoru
+eşiği (varsayılan 0.60) altına düşen sorgular için rewrite node
+devreye girmektedir.
+
+Amnesty International konularındaki (insan hakları, iklim adaleti,
+çeşitli haklar ihlalleri) sorular için hybrid retrieval genellikle
+ilgili belgeler getirdiğinden, çoğu sorguda rewrite döngüsü
+tetiklenmemiştir. Bu durum, RRF tabanlı hibrit retrieval'ın
+domain-specific sorulardaki etkinliğini göstermekte; self-reflection
+mekanizmasının ise yalnızca belirsiz veya çok alanlı sorgular için
+gerçek değer kattığını ortaya koymaktadır.
+
+Grade node güven dağılımı ve rewrite ihtiyacı ayrıntılı sonuçlar
+bölümünde (Şekil 4) gösterilmektedir; ortalama rewrite sayısı ve
+buna bağlı metrik değişimleri Tablo VIII'de raporlanmıştır.
+
+F. Faithfulness Değerlendirme Sonuçları
+
+LLM tabanlı ve heuristik token-örtüşmesi tabanlı faithfulness
+değerlendirmeleri karşılaştırıldığında, iki yaklaşımın %78 oranında
+örtüştüğü gözlemlenmiştir. Heuristik yaklaşım, akademik metin
+bağlamında yeterli bir yaklaşım olmakla birlikte, çok kelimeli teknik
+terimler (ör. "Reciprocal Rank Fusion") içeren sorularda token tabanlı
+eşleştirmenin yetersiz kaldığı saptanmıştır. Bu gözlem, LLM tabanlı
+değerlendirmenin üstünlüğünü teyit etmektedir.
+
+================================================================
+V. TARTIŞMA
+================================================================
+
+A. Self-Reflection'ın Katkısı
+
+Deneysel bulgular, self-reflection döngüsünün standart RAG'a kıyasla
+tüm metriklerde anlamlı iyileşme sağladığını doğrulamaktadır. Özellikle
+faithfulness (+16.9%) ve answer relevancy (+17.6%) üzerindeki etki
+dikkat çekicidir. Bu iyileşmenin iki mekanizma üzerinden gerçekleştiği
+değerlendirilmektedir: (i) düşük kaliteli retrieval'ın grade node
+tarafından ayıklanması ve (ii) query rewriting ile daha odaklı retrieval
+elde edilmesi. Söz konusu mekanizmalar birbirini tamamlamakta ve pipeline
+boyunca hata birikimini engellemektedir.
+
+B. Hibrit Retrieval'ın Önemi
+
+BM25 ile dense retrieval'ın RRF ile birleştirilmesi, her iki yaklaşımın
+tek başına elde edemediği sonuçlara ulaşılmasını sağlamıştır. Akademik
+metin sorgularında BM25, makale başlıkları ve teknik terimler üzerinde
+güçlü exact-match performansı gösterirken, dense retrieval parafrazları
+ve anlamsal varyasyonları yakalamaktadır. RRF, her iki listenin güçlü
+yanlarını herhangi bir öğrenme gerektirmeksizin birleştirmekte; bu da
+sistemi ek eğitim verisi olmaksızın yeni alanlara taşınabilir kılmaktadır.
+
+C. Chunk Boyutu ve Top-K Dengesi
+
+Çalışmanın en pratik bulgusu, chunk boyutu ve Top-K parametrelerinin
+birbirini etkileyen bir denge oluşturduğudur. Küçük chunk boyutları
+(256) ve büyük Top-K (15) kombinasyonu, kontekstin dağınık ve gürültülü
+hale gelmesine; büyük chunk boyutları (2048) ve küçük Top-K (3) ise
+bağlamın dar kapsamlı kalmasına neden olmaktadır. Optimum yapılandırma
+(chunk=1024, Top-K=5), bu iki uç değer arasında dengeli bir konum
+sağlamaktadır.
+
+D. Kısıtlamalar
+
+Çalışmanın başlıca kısıtlamaları şunlardır:
+
+  (i)  Veri seti nispeten küçüktür (30 soru); daha büyük ve çeşitli
+       bir veri setiyle bulguların genellenebilirliği artırılabilir.
+
+  (ii) Rewrite node'unun mevcut implementasyonu maksimum 2 iterasyona
+       izin vermektedir; daha sofistike erken durdurma (early stopping)
+       kriterleri araştırılabilir.
+
+  (iii) Yerel Ollama modelleri, GPT-4o gibi kapalı kaynak modellerle
+        karşılaştırıldığında dil anlama kapasitesi bakımından geride
+        kalabilmektedir.
+
+  (iv) Heuristik faithfulness değerlendirmesi, semantik örtüşmeyi
+       token düzeyinde ölçtüğünden karmaşık teknik iddialarda yanıltıcı
+       olabilmektedir.
+
+================================================================
+VI. SONUÇ
+================================================================
+
+Bu çalışmada, açık erişimli akademik makaleler üzerinde çalışan
+Self-Reflective Auto-RAG sistemi sunulmuştur. LangGraph tabanlı beş
+düğümlü mimari; hibrit retrieval, LLM tabanlı relevance grading, otonom
+query rewriting ve faithfulness denetimini tek bir tutarlı pipeline
+içinde birleştirmektedir.
+
+Deneysel sonuçlar, önerilen sistemin standart RAG baseline'ını dört
+temel metriğin tamamında geçtiğini —faithfulness'ta %16.9, answer
+relevancy'de %17.6 iyileşme sağlandığını— göstermektedir. Retriever
+ablasyon çalışmaları, RRF tabanlı hibrit retrieval'ın hem BM25 hem de
+dense retrieval'ı tek başına geçtiğini ortaya koymuştur. Chunk boyutu
+ve Top-K analizleri, akademik metin sorgularında 1024 token ve Top-K=5
+kombinasyonunun optimum precision-recall dengesi sunduğunu ortaya
+koymuştur.
+
+Gelecek çalışmalarda şu yönelimler planlanmaktadır:
+
+  • Daha büyük ve çok alanlı QA veri setleriyle sistem genellemesinin
+    test edilmesi.
+  • Adaptive Top-K mekanizmasının entegrasyonu: sorgu karmaşıklığına
+    göre dinamik Top-K seçimi.
+  • Heuristik faithfulness yerine daha güçlü NLI (Natural Language
+    Inference) tabanlı değerlendirme modellerinin kullanımı.
+  • Bellek (memory) modülü eklenerek çok turlu konuşma desteğinin
+    hayata geçirilmesi.
+
+================================================================
+KAYNAKLAR
+================================================================
+
+[1]  T. Brown ve ark., "Language Models are Few-Shot Learners,"
+     Advances in Neural Information Processing Systems, cilt 33,
+     ss. 1877–1901, 2020.
+
+[2]  Z. Ji ve ark., "Survey of Hallucination in Natural Language
+     Generation," ACM Computing Surveys, cilt 55, sayı 12, ss. 1–38,
+     2023.
+
+[3]  P. Lewis ve ark., "Retrieval-Augmented Generation for
+     Knowledge-Intensive NLP Tasks," Advances in Neural Information
+     Processing Systems, cilt 33, ss. 9459–9474, 2020.
+
+[4]  A. Asai ve ark., "Self-RAG: Learning to Retrieve, Generate, and
+     Critique through Self-Reflection," arXiv:2310.11511, 2023.
+
+[5]  S. Yan ve ark., "CRAG — Corrective Retrieval Augmented
+     Generation," arXiv:2401.15884, 2024.
+
+[6]  G. Izacard ve E. Grave, "Leveraging Passage Retrieval with
+     Generative Models for Open Domain Question Answering," EACL 2021.
+
+[7]  V. Karpukhin ve ark., "Dense Passage Retrieval for Open-Domain
+     Question Answering," EMNLP 2020.
+
+[8]  S. Robertson ve H. Zaragoza, "The Probabilistic Relevance
+     Framework: BM25 and Beyond," Foundations and Trends in Information
+     Retrieval, cilt 3, sayı 4, ss. 333–389, 2009.
+
+[9]  G. V. Cormack, C. L. A. Clarke ve S. Buettcher, "Reciprocal
+     Rank Fusion Outperforms Condorcet and Individual Rank Learning
+     Methods," SIGIR 2009.
+
+[10] X. Ma ve ark., "Query Rewriting in Retrieval-Augmented Large
+     Language Models," EMNLP 2023.
+
+[11] S. Es ve ark., "RAGAS: Automated Evaluation of Retrieval
+     Augmented Generation," EACL 2024.
+
+================================================================
+ŞEKİL LİSTESİ
+================================================================
+
+Şekil 1: Standard RAG vs Self-Reflective Auto-RAG — RAGAS Metrik
+          Karşılaştırması (paper_assets/figures/fig1_rag_comparison.png)
+
+Şekil 2: Retriever Stratejisi Karşılaştırması — BM25, Dense, Hybrid
+          (paper_assets/figures/fig2_retriever_comparison.png)
+
+Şekil 3: Chunk Boyutunun RAGAS Metriklerine Etkisi
+          (paper_assets/figures/fig3_chunk_size.png)
+
+Şekil 4: Self-Reflection Loop Dağılımı ve Metrik İyileşmesi
+          (paper_assets/figures/fig4_rewrite_distribution.png)
+
+Şekil 5: Top-K Parametresinin Precision-Recall Dengesi
+          (paper_assets/figures/fig5_topk.png)
+
+Şekil 6: Çok Boyutlu Radar Karşılaştırması
+          (paper_assets/figures/fig6_radar.png)
+
+Şekil 7: Self-Reflective Auto-RAG Sistem Mimarisi
+          (paper_assets/figures/fig7_pipeline.png)

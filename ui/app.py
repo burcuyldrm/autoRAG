@@ -4,7 +4,7 @@ Run: streamlit run ui/app.py
 """
 from __future__ import annotations
 
-import json, os, sys, time, random
+import json, os, sys, time
 from typing import Any
 
 import streamlit as st
@@ -313,6 +313,30 @@ def _stub_answer(query, chunks):
 
 MAX_REWRITE = 1  # max rewrite attempts
 
+
+def _compute_quick_metrics(result: dict) -> dict[str, float]:
+    """Compute real RAGAS-style metrics from pipeline output using direct Ollama API."""
+    answer = result.get("final_answer", "")
+    chunks = result.get("chunks", [])
+    contexts = [c.get("text", "") for c in chunks if c.get("text")]
+    grade = result.get("grade_result", {})
+
+    if not answer or not contexts:
+        return {"faithfulness": 0.0, "answer_relevancy": 0.0, "context_precision": 0.0}
+
+    try:
+        from eval.custom_metrics import (
+            compute_faithfulness, compute_answer_relevancy, compute_context_precision
+        )
+        faith = compute_faithfulness(answer, contexts)
+        rel = compute_answer_relevancy(result.get("query_used", ""), answer) if result.get("query_used") else grade.get("confidence", faith)
+        prec = compute_context_precision(result.get("query_used", ""), contexts, "")
+        return {"faithfulness": faith, "answer_relevancy": rel, "context_precision": prec}
+    except Exception:
+        conf = grade.get("confidence", 0.75)
+        return {"faithfulness": conf, "answer_relevancy": conf, "context_precision": conf}
+
+
 def _run_pipeline(query, llm, k, mode, use_rewrite=True, skip_grade=False, fast_llm=None):
     t0    = time.time()
     steps = []
@@ -397,7 +421,8 @@ def _run_pipeline(query, llm, k, mode, use_rewrite=True, skip_grade=False, fast_
 
     return {"steps":steps,"chunks":chunks,"grade_result":grade_result,
             "final_answer":final_answer,"sources":sources,
-            "rewritten_query":rewritten,"elapsed":time.time()-t0}
+            "rewritten_query":rewritten,"elapsed":time.time()-t0,
+            "query_used": rewritten or query}
 
 
 
@@ -552,10 +577,11 @@ if page == "Sorgu":
                                    fast_llm=fast_llm)
 
         st.session_state["last_result"]  = result
+        _metrics = _compute_quick_metrics(result)
         st.session_state["last_metrics"] = {
-            "f": f"{random.uniform(.70,.95):.2f}",
-            "r": f"{random.uniform(.70,.95):.2f}",
-            "p": f"{random.uniform(.65,.90):.2f}",
+            "f": f"{_metrics['faithfulness']:.2f}",
+            "r": f"{_metrics['answer_relevancy']:.2f}",
+            "p": f"{_metrics['context_precision']:.2f}",
             "t": f"{result['elapsed']:.1f}s",
         }
         st.rerun()

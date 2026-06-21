@@ -46,9 +46,10 @@ class ChromaVectorStore(VectorStore):
 
         os.makedirs(persist_dir, exist_ok=True)
         self._client = chromadb.PersistentClient(path=persist_dir)
-        ef = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=EMBEDDING_MODEL
-        )
+        try:
+            ef = embedding_functions.ONNXMiniLM_L6_V2()
+        except Exception:
+            ef = embedding_functions.DefaultEmbeddingFunction()
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
             embedding_function=ef,
