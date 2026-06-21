@@ -224,10 +224,14 @@ def run_rag_comparison(
     dataset_path: str | None = None,
 ) -> list[ExperimentResult]:
     """Benchmark 1: run Standard RAG and Auto-RAG side by side."""
+    from eval.chains import get_standard_chain, get_autorag_chain
+
     if standard_chain is None:
-        standard_chain = MockChain(rewrite_count=0)
+        standard_chain = get_standard_chain()
+    
     if autorag_chain is None:
-        autorag_chain = MockChain(rewrite_count=1)
+        autorag_chain = get_autorag_chain()
+
 
     n = n_questions if n_questions is not None else len(dataset)
     logger.info("Benchmark 1 — Standard RAG vs Auto-RAG (%d questions)", n)
@@ -266,8 +270,10 @@ def run_retriever_comparison(
     dataset_path: str | None = None,
 ) -> list[ExperimentResult]:
     """Benchmark 2: compare bm25, dense, and hybrid retrieval."""
+    from eval.chains import get_standard_chain
+
     if base_chain is None:
-        base_chain = MockChain()
+        base_chain = get_standard_chain()
 
     n = n_questions if n_questions is not None else len(dataset)
     logger.info("Benchmark 2 — Retriever comparison: %s", retriever_types)
@@ -305,8 +311,10 @@ def run_chunk_comparison(
     output_path: str = "results/benchmark_chunk_size.json",
 ) -> list[ExperimentResult]:
     """Benchmark 3: compare chunk sizes 256 / 512 / 1024 / 2048."""
+    from eval.chains import get_standard_chain
+
     if base_chain is None:
-        base_chain = MockChain()
+        base_chain = get_standard_chain()
 
     logger.info("Benchmark 3 — Chunk size comparison: %s", chunk_sizes)
     results = []
