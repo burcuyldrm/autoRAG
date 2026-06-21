@@ -36,8 +36,8 @@ plt.rcParams.update({
 # ─────────────────────────────────────────────────────────────
 def fig_rag_comparison():
     metrics = ["Faithfulness", "Answer\nRelevancy", "Context\nPrecision", "Context\nRecall"]
-    standard = [0.71, 0.74, 0.68, 0.65]
-    autorag  = [0.83, 0.87, 0.79, 0.74]
+    standard = [0.87, 0.85, 0.30, 0.64]
+    autorag  = [0.69, 0.80, 0.30, 0.64]
 
     x = np.arange(len(metrics))
     w = 0.32
@@ -62,7 +62,7 @@ def fig_rag_comparison():
     ax.set_xticklabels(metrics, fontsize=10)
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("Skor", fontsize=11)
-    ax.set_title("Standard RAG vs Self-Reflective Auto-RAG\nRAGAS Metrik Karşılaştırması (n=30 soru)", fontsize=12, pad=12)
+    ax.set_title("Standard RAG vs Self-Reflective Auto-RAG\nRAGAS Metrik Karşılaştırması (n=10 soru)", fontsize=12, pad=12)
     ax.legend(fontsize=10, loc="lower right")
     ax.yaxis.grid(True, linestyle='--', alpha=0.5, zorder=0)
     ax.set_axisbelow(True)
@@ -78,9 +78,9 @@ def fig_rag_comparison():
 # ─────────────────────────────────────────────────────────────
 def fig_retriever_comparison():
     metrics  = ["Faithfulness", "Answer\nRelevancy", "Context\nPrecision", "Context\nRecall"]
-    bm25     = [0.71, 0.75, 0.68, 0.61]
-    dense    = [0.76, 0.80, 0.73, 0.68]
-    hybrid   = [0.83, 0.87, 0.79, 0.74]
+    bm25     = [0.96, 0.81, 0.32, 0.84]
+    dense    = [0.97, 0.82, 0.32, 0.84]
+    hybrid   = [0.86, 0.91, 0.32, 0.88]
 
     x = np.arange(len(metrics))
     w = 0.22
@@ -158,7 +158,7 @@ def fig_rewrite_distribution():
     )
     for at in autotexts:
         at.set_fontweight('bold')
-    ax1.set_title("Self-Reflection Loop Dağılımı\n(n=30 soru)", fontsize=11)
+    ax1.set_title("Self-Reflection Loop Dağılımı\n(n=10 soru)", fontsize=11)
 
     # Çubuk — metrik vs rewrite sayısı
     rewrites = [0, 1, 2]
