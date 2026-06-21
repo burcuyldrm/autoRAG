@@ -72,7 +72,7 @@ Cevap + Atıflar + RAGAS Metrikleri + Faithfulness
 
 ## Dataset Format
 
-`data/qa_dataset.json` — 30 akademik Q&A sorusu. Her kayıt aşağıdaki alanları taşır:
+`data/qa_dataset.json` — 100 akademik benchmark sorusu. Her kayıt aşağıdaki alanları taşır:
 
 ```json
 {
@@ -130,8 +130,12 @@ cp .env.example .env
 `.env` dosyasını düzenle:
 
 ```
-OPENAI_API_KEY=your_openai_api_key    # Grade, Generate, Faithfulness node'ları için
-CORE_API_KEY=your_core_api_key        # https://core.ac.uk/services/api
+OPENAI_API_KEY=optional_if_using_openai
+OLLAMA_MODEL=deepseek-r1:7b
+OLLAMA_FAST_MODEL=qwen2.5:3b
+OLLAMA_BASE_URL=http://localhost:11434
+CORE_API_KEY=your_core_api_key
+Not: Bu proje varsayılan olarak OpenAI API yerine yerel Ollama modellerini kullanır. Bu nedenle LLM tabanlı grade, rewrite, generate ve RAGAS evaluation adımları API anahtarı olmadan çalıştırılabilir.
 ```
 
 ---
@@ -222,6 +226,20 @@ result = check_faithfulness(
 
 Her `AutoRAGChain.run()` ve `StandardRAGChain.run()` çağrısı otomatik olarak `faithfulness_result`, `faithfulness_score`, `unsupported_claims` alanlarını döndürür.
 
+---
+### Faithfulness Methodology
+
+Faithfulness, üretilen cevabın retrieval edilen bağlam tarafından desteklenip desteklenmediğini ölçer. Bu projede faithfulness iki seviyede ele alınır:
+
+1. **Runtime Faithfulness Check:**  
+   `graph/nodes/faithfulness_node.py`, her cevap için bağlam destek kontrolü yapar. LLM mevcutsa cevap içindeki iddialar retrieval edilen context ile karşılaştırılır. LLM yoksa token-overlap tabanlı heuristic fallback kullanılır.
+
+2. **Benchmark-level Faithfulness:**  
+   `eval/benchmark_runner.py` ve `eval/eval_runner.py`, RAGAS faithfulness metriğini kullanarak Standard RAG ve Auto-RAG çıktılarının bağlamla tutarlılığını ölçer.
+
+RAGAS değerlendirmesinde `get_ragas_llm()` ile yerel Ollama modeli, `get_ragas_embeddings()` ile `all-MiniLM-L6-v2` sentence-transformer embedding modeli kullanılır. Böylece deneyler OpenAI API bağımlılığı olmadan tekrarlanabilir biçimde çalıştırılabilir.
+
+Faithfulness skoru 0 ile 1 arasında yorumlanır. Yüksek skor, cevaptaki iddiaların retrieval edilen context tarafından daha güçlü desteklendiğini gösterir. Düşük skor ise potansiyel hallucination veya unsupported claim riskine işaret eder.
 ---
 
 ## Results JSON Format
