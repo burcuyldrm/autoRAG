@@ -34,7 +34,11 @@ class AutoRAGChain:
     llm : Any | None
         LangChain-compatible chat model used by grade, generate, and rewrite nodes.
     grade_threshold : float
-        Minimum grade confidence to accept retrieval without rewriting (default 0.60).
+        Minimum grade confidence to accept retrieval without rewriting (default 0.75).
+        Rewrite triggers when grade_confidence < grade_threshold.
+    retrieval_threshold : float
+        Minimum average retrieval score to accept without rewriting (default 0.0 = disabled).
+        When > 0, rewrite also triggers if avg_retrieval_score < retrieval_threshold.
     max_rewrites : int
         Maximum number of query rewrites before forcing generation (default 2).
     """
@@ -44,13 +48,15 @@ class AutoRAGChain:
         vectorstore=None,
         bm25_retriever=None,
         llm=None,
-        grade_threshold: float = 0.60,
+        grade_threshold: float = 0.75,
+        retrieval_threshold: float = 0.0,
         max_rewrites: int = 2,
     ) -> None:
         self._vs = vectorstore
         self._bm25 = bm25_retriever
         self._llm = llm
         self._grade_threshold = grade_threshold
+        self._retrieval_threshold = retrieval_threshold
         self._max_rewrites = max_rewrites
 
     # ------------------------------------------------------------------
@@ -94,31 +100,70 @@ class AutoRAGChain:
         last_grade: dict | None = None
         last_chunks: list[dict] = []
         last_scores: list[float] = []
+        rewrite_trace: list[dict[str, Any]] = []
+        initial_scores: list[float] = []
 
         for attempt in range(self._max_rewrites + 1):
+            t_attempt = time.monotonic()
             chunks, scores = self._retrieve(current_query, retrieval_mode, top_k)
+
+            if attempt == 0:
+                initial_scores = scores
+
+            avg_score = sum(scores) / len(scores) if scores else 0.0
 
             state: dict[str, Any] = {"query": current_query, "chunks": chunks}
             state = grade_node(state, llm=self._llm)
             grade = state["grade_result"]
 
+            # Acceptance condition: grade confidence AND retrieval score both above thresholds.
+            # Using confidence as SOLE gate (not `relevant`) prevents the model from
+            # bypassing the threshold by always returning relevant=True.
+            grade_ok = grade["confidence"] >= self._grade_threshold
+            score_ok = (self._retrieval_threshold <= 0.0) or (avg_score >= self._retrieval_threshold)
+            accepted = grade_ok and score_ok
+
+            trace_entry: dict[str, Any] = {
+                "attempt": attempt,
+                "query": current_query,
+                "avg_retrieval_score": round(avg_score, 4),
+                "grade_relevant": grade["relevant"],
+                "grade_confidence": grade["confidence"],
+                "grade_reasoning": grade.get("reasoning", ""),
+                "grade_ok": grade_ok,
+                "score_ok": score_ok,
+                "accepted": accepted,
+                "latency_seconds": round(time.monotonic() - t_attempt, 3),
+            }
+
             last_chunks = chunks
             last_scores = scores
             last_grade = grade
 
-            if grade["relevant"] or grade["confidence"] >= self._grade_threshold:
+            if accepted:
                 logger.info(
-                    "Grade accepted at attempt %d (relevant=%s, confidence=%.2f)",
-                    attempt, grade["relevant"], grade["confidence"],
+                    "Grade accepted at attempt %d (confidence=%.2f >= %.2f, avg_score=%.3f)",
+                    attempt, grade["confidence"], self._grade_threshold, avg_score,
                 )
+                rewrite_trace.append(trace_entry)
                 break
 
             if rewrite_count >= self._max_rewrites:
                 logger.info("Max rewrites (%d) reached; proceeding to generate.", self._max_rewrites)
+                rewrite_trace.append(trace_entry)
                 break
 
+            logger.info(
+                "Rewrite triggered at attempt %d (confidence=%.2f < %.2f, avg_score=%.3f)",
+                attempt, grade["confidence"], self._grade_threshold, avg_score,
+            )
+
             reason = grade.get("reasoning", "")
-            current_query = rewrite_query(current_query, reason=reason, llm=self._llm)
+            rewritten = rewrite_query(current_query, reason=reason, llm=self._llm)
+            trace_entry["rewritten_to"] = rewritten
+            rewrite_trace.append(trace_entry)
+
+            current_query = rewritten
             last_rewritten = current_query
             rewrite_count += 1
             logger.info("Rewrite #%d: %r", rewrite_count, current_query)
@@ -130,17 +175,25 @@ class AutoRAGChain:
         gen_state["query"] = current_query
         gen_state = faithfulness_node(gen_state, llm=self._llm)
 
+        final_avg_score = sum(last_scores) / len(last_scores) if last_scores else 0.0
+
         return {
             "original_query": original_query,
             "final_query": current_query,
             "rewritten_query": last_rewritten,
             "rewrite_count": rewrite_count,
+            "rewrite_triggered": rewrite_count > 0,
             "grade_confidence": last_grade["confidence"] if last_grade else 0.0,
             "grade_relevant": last_grade["relevant"] if last_grade else False,
             "retrieval_mode": retrieval_mode,
             "top_k": top_k,
             "latency_seconds": time.monotonic() - t0,
             "retrieved_scores": last_scores,
+            "retrieved_scores_before": initial_scores,
+            "retrieved_scores_after": last_scores,
+            "avg_retrieval_score_initial": round(sum(initial_scores) / len(initial_scores), 4) if initial_scores else 0.0,
+            "avg_retrieval_score_final": round(final_avg_score, 4),
+            "rewrite_trace": rewrite_trace,
             "answer": gen_state.get("final_answer", ""),
             "contexts": [c["text"] for c in last_chunks],
             "sources": gen_state.get("sources", []),

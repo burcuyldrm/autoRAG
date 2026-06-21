@@ -9,16 +9,26 @@ from graph.state import GraphState, GradeResult
 logger = logging.getLogger(__name__)
 
 _GRADE_PROMPT = """\
-You are a relevance grader. Given the user's question and retrieved document chunks, \
-decide if the chunks contain information relevant to answering the question.
+You are a strict relevance grader. Given a question and retrieved document chunks, \
+score how well the chunks answer the SPECIFIC question asked.
 
 Question: {query}
 
 Retrieved chunks:
 {chunks}
 
+Scoring guide for confidence (be discriminating — most retrievals are imperfect):
+  1.0 — chunks directly and completely answer the question with specific facts
+  0.8 — chunks contain most of the needed information but miss some details
+  0.6 — chunks are topically related but don't directly address the question
+  0.4 — chunks are only tangentially relevant; key information is missing
+  0.2 — chunks are about the same broad topic but don't help answer this question
+  0.0 — chunks are off-topic or irrelevant
+
+Set relevant=false if the chunks would NOT allow someone to answer the question correctly.
+
 Reply with ONLY a JSON object — no markdown, no explanation outside the JSON:
-{{"relevant": true, "confidence": 0.85, "reasoning": "one sentence"}}
+{{"relevant": true, "confidence": 0.73, "reasoning": "one sentence explaining the score"}}
 """
 
 

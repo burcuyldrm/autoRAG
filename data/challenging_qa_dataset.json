@@ -1,0 +1,122 @@
+[
+  {
+    "question": "What jurisprudential shift occurred in American reproductive rights law and what demographic groups are most affected by the resulting restrictions?",
+    "ground_truth": "The USA Supreme Court overturned 50 years of constitutional protection for abortion rights in 2022. One in three women and girls of reproductive age now live in states where abortion access is severely restricted. States with restrictions also have weaker maternal health infrastructure and higher maternal mortality rates.",
+    "difficulty": "paraphrase",
+    "original": "What are the global implications of the USA Supreme Court ruling on abortion?"
+  },
+  {
+    "question": "Which industrial entities bear the greatest responsibility for cumulative atmospheric carbon burden, and how does this compare across geographic regions?",
+    "ground_truth": "Just 100 companies are responsible for 71% of global greenhouse gas emissions. The largest contributors are fossil fuel corporations. Companies in the Americas, particularly in the oil and gas sector, account for a disproportionate share of emissions.",
+    "difficulty": "paraphrase",
+    "original": "Which companies are the main contributors to GHG emissions?"
+  },
+  {
+    "question": "In jurisdictions where access to reproductive healthcare was curtailed following the 2022 US ruling, what correlated health outcomes and socioeconomic disparities have been documented?",
+    "ground_truth": "States that restricted abortion access have weaker maternal health systems and higher maternal mortality rates. Women in these states face significant barriers to reproductive healthcare. The restrictions disproportionately affect low-income women and women of color who cannot travel to access services.",
+    "difficulty": "multi_hop",
+    "original": "What are the health consequences of abortion restrictions in the USA?"
+  },
+  {
+    "question": "How do carbon-intensive extraction industries in the Western hemisphere contribute to the acceleration of ecological breakdown, and what accountability frameworks exist?",
+    "ground_truth": "Private companies in the Americas are among the largest GHG emitters globally. Fossil fuel extraction companies have continued expanding operations despite climate commitments. International accountability frameworks such as the Paris Agreement place obligations on states but enforcement against private companies remains limited.",
+    "difficulty": "multi_hop",
+    "original": "Which private companies in the Americas are the largest GHG emitters?"
+  },
+  {
+    "question": "What mechanisms do authoritarian governments employ to criminalize legitimate dissent, particularly through misuse of anti-extremism statutes?",
+    "ground_truth": "Authoritarian governments use vague anti-extremism and anti-terrorism legislation to prosecute peaceful protesters, journalists, and human rights defenders. Article 207.3 and similar statutes are applied to criminalize speech that contradicts official narratives. Defendants can be found guilty for statements deemed contrary to the interests of the state.",
+    "difficulty": "paraphrase",
+    "original": "When can individuals be found guilty under Article 207.3?"
+  },
+  {
+    "question": "What evidentiary standards do prosecutorial authorities apply when evaluating whether public statements constitute criminal disinformation?",
+    "ground_truth": "Prosecution considers statements contrary to the official government position as potential disinformation. The prosecution evaluates whether statements undermine public trust in state institutions. Statements made by journalists or activists that contradict military or government claims may be prosecuted.",
+    "difficulty": "indirect",
+    "original": "When does the prosecution consider statements contrary to the interests of the state?"
+  },
+  {
+    "question": "What is the relationship between corporate governance failures in fossil fuel sectors and escalating climate vulnerability in the Global South?",
+    "ground_truth": "Fossil fuel companies have prioritized shareholder returns over climate commitments, continuing expansion of extraction despite scientific consensus. This has accelerated global warming which disproportionately affects developing nations, particularly in sub-Saharan Africa and South Asia, which contribute least to emissions but face the worst climate impacts.",
+    "difficulty": "multi_hop",
+    "original": "How does climate change affect vulnerable populations in Africa?"
+  },
+  {
+    "question": "Through what legal instruments do states suppress documentation of human rights violations committed during armed conflict?",
+    "ground_truth": "States use national security laws, journalist accreditation requirements, and access restrictions to prevent documentation of abuses in conflict zones. Witnesses and reporters face criminal charges under laws criminalizing contact with armed groups. Evidence of violations is suppressed through intimidation of survivors and destruction of documentation.",
+    "difficulty": "indirect",
+    "original": "How do governments restrict documentation of human rights abuses in conflict?"
+  },
+  {
+    "question": "What surveillance technologies have been deployed against civil society organizations and what are the legal implications under international human rights law?",
+    "ground_truth": "Governments have deployed commercial spyware such as Pegasus against human rights defenders, journalists, and opposition figures. This constitutes a violation of the right to privacy under Article 17 of the ICCPR. The use of surveillance without judicial oversight and targeting of civil society actors is incompatible with international human rights standards.",
+    "difficulty": "technical",
+    "original": "How is surveillance used against human rights defenders?"
+  },
+  {
+    "question": "What are the compounding effects of displacement and environmental degradation on communities already marginalized by colonial extraction economies?",
+    "ground_truth": "Indigenous and marginalized communities face displacement both from conflict and climate-driven environmental changes. Colonial extraction economies have left these communities with degraded land and weak institutional protections. Displacement compounds vulnerability by removing access to traditional livelihoods and community support structures.",
+    "difficulty": "multi_hop",
+    "original": "How does climate displacement affect marginalized communities?"
+  },
+  {
+    "question": "How has the international community responded to systematic detention of political opponents without due process guarantees?",
+    "ground_truth": "The international community has responded through UN resolutions, targeted sanctions, and statements from human rights bodies. The UN Special Rapporteur on Torture and other mandate holders have documented patterns of arbitrary detention. However, enforcement mechanisms remain limited and states often ignore international condemnation.",
+    "difficulty": "indirect",
+    "original": "What international responses exist to arbitrary detention?"
+  },
+  {
+    "question": "What distinguishes the legal status of combatants who surrender from those captured during active hostilities under applicable humanitarian law frameworks?",
+    "ground_truth": "Under international humanitarian law, persons who surrender or are captured must be treated as prisoners of war and afforded protections under the Geneva Conventions. They cannot be summarily executed and must receive fair trial guarantees if prosecuted. The distinction between voluntary surrender and capture affects procedural rights but both categories are protected.",
+    "difficulty": "technical",
+    "original": "What are the rights of captured combatants under international law?"
+  },
+  {
+    "question": "In what ways do extractive industry operations exacerbate pre-existing inequalities and undermine indigenous land rights frameworks?",
+    "ground_truth": "Extractive industries operate on indigenous territories often without free, prior, and informed consent as required by UNDRIP. Operations destroy ecosystems that indigenous communities depend on for subsistence. Revenue from extraction rarely benefits local communities while environmental and social costs are externalized onto them.",
+    "difficulty": "technical",
+    "original": "How do extractive industries affect indigenous communities?"
+  },
+  {
+    "question": "What procedural safeguards are required before authorities can lawfully restrict public assembly in democratic societies?",
+    "ground_truth": "Restrictions on public assembly must be prescribed by law, necessary and proportionate, and non-discriminatory. Authorities must demonstrate a legitimate aim such as public safety or order. Prior notification requirements are permissible but blanket bans on assemblies violate international human rights standards.",
+    "difficulty": "indirect",
+    "original": "What are the legal requirements for restricting the right to protest?"
+  },
+  {
+    "question": "How do climate-induced resource scarcities interact with existing ethnic and political tensions to generate or amplify armed conflict dynamics?",
+    "ground_truth": "Climate change reduces agricultural yields and water availability, intensifying competition over resources in already fragile contexts. In regions like the Sahel, resource scarcity intersects with weak governance and ethnic tensions to drive conflict. Climate stress acts as a threat multiplier rather than a direct cause of violence.",
+    "difficulty": "multi_hop",
+    "original": "What is the relationship between climate change and conflict?"
+  },
+  {
+    "question": "What institutional frameworks exist to hold non-state armed actors accountable for violations of international humanitarian law?",
+    "ground_truth": "Non-state armed actors can be held accountable through international criminal law mechanisms including the International Criminal Court when states refer situations or the Security Council acts. Truth and reconciliation commissions, hybrid tribunals, and universal jurisdiction principles also provide accountability avenues. However, practical enforcement against non-state actors remains challenging.",
+    "difficulty": "technical",
+    "original": "How are non-state armed groups held accountable for human rights violations?"
+  },
+  {
+    "question": "What role do digital platforms play in both enabling and suppressing human rights documentation in conflict zones?",
+    "ground_truth": "Digital platforms enable rapid sharing of evidence of human rights violations and allow victims and witnesses to document abuses in real time. However, platforms also remove content under pressure from governments, apply inconsistent moderation that disproportionately affects conflict documentation, and expose users to surveillance. The same technologies used for documentation can be used for targeting activists.",
+    "difficulty": "multi_hop",
+    "original": "How do social media platforms affect human rights documentation?"
+  },
+  {
+    "question": "What remediation obligations fall upon corporations that have profited from operations linked to forced labor or other serious human rights violations?",
+    "ground_truth": "Under the UN Guiding Principles on Business and Human Rights, corporations have a responsibility to remedy adverse human rights impacts they cause or contribute to. This includes providing restitution, compensation, rehabilitation, and guarantees of non-repetition. Mandatory human rights due diligence legislation in some jurisdictions creates legally enforceable obligations.",
+    "difficulty": "technical",
+    "original": "What are corporate obligations when linked to human rights violations?"
+  },
+  {
+    "question": "How has the securitization of migration discourse affected the protection space for asylum seekers and refugees at external borders?",
+    "ground_truth": "The framing of migration as a security threat has led to externalization of border controls, pushbacks, and detention of asylum seekers without adequate procedural safeguards. States have outsourced border management to third countries with poor human rights records. This has significantly reduced the protection space for genuine refugees and created conditions for serious human rights violations.",
+    "difficulty": "indirect",
+    "original": "How does the securitization of migration affect refugee protection?"
+  },
+  {
+    "question": "By what mechanisms does impunity for past atrocities perpetuate cycles of violence and undermine transitional justice processes?",
+    "ground_truth": "Impunity signals that violations carry no consequences, emboldening perpetrators and future actors. It denies victims justice and acknowledgment, preventing psychological recovery and community reconciliation. Transitional justice mechanisms require accountability to be effective — without prosecution or truth-telling, peace agreements often fail and violence recurs.",
+    "difficulty": "multi_hop",
+    "original": "Why does impunity contribute to cycles of violence?"
+  }
+]
