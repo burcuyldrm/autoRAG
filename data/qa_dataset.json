@@ -239,4 +239,571 @@
     "topic": "hybrid retrieval",
     "difficulty": "hard"
   }
+  ,
+  {
+    "id": "q031",
+    "question": "Why does query rewriting improve retrieval quality in Auto-RAG systems?",
+    "ground_truth": "Query rewriting improves retrieval quality by reformulating ambiguous, incomplete, or poorly specified user queries into more retrieval-friendly forms. This helps retrieval systems find more relevant documents and reduces retrieval failures.",
+    "expected_source": "Self-RAG (Asai et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q032",
+    "question": "What is iterative retrieval in retrieval-augmented generation systems?",
+    "ground_truth": "Iterative retrieval is a process where retrieval is performed multiple times, often using updated queries or intermediate results, to progressively improve the relevance and completeness of retrieved information.",
+    "expected_source": "Iterative Retrieval Research",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q033",
+    "question": "What is self-reflection in Auto-RAG systems?",
+    "ground_truth": "Self-reflection refers to the ability of a system to evaluate its own retrieval or generation outputs and decide whether additional retrieval, query rewriting, or corrective actions are necessary.",
+    "expected_source": "Self-RAG (Asai et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q034",
+    "question": "How does a retrieval grader work in self-reflective RAG systems?",
+    "ground_truth": "A retrieval grader evaluates whether retrieved documents contain sufficient information to answer a query. It typically produces a relevance label and a confidence score that guide subsequent retrieval or rewriting decisions.",
+    "expected_source": "CRAG paper (Yan et al., 2024)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q035",
+    "question": "Why can the first retrieval attempt fail in a RAG system?",
+    "ground_truth": "The first retrieval attempt may fail due to ambiguous wording, vocabulary mismatch, insufficient indexing, poor query formulation, or limitations of the retrieval model. Such failures motivate corrective retrieval mechanisms.",
+    "expected_source": "RAG Survey (Gao et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q036",
+    "question": "What is retrieval confidence and how is it used in Auto-RAG?",
+    "ground_truth": "Retrieval confidence is an estimate of how relevant and useful retrieved documents are for answering a query. Auto-RAG systems use confidence scores to determine whether retrieval results should be accepted or improved through query rewriting.",
+    "expected_source": "CRAG paper (Yan et al., 2024)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q037",
+    "question": "What are the risks of excessive query rewriting?",
+    "ground_truth": "Excessive query rewriting may introduce semantic drift, alter the user's original intent, increase latency, and retrieve documents that are less relevant than those obtained using the original query.",
+    "expected_source": "Query Reformulation Research",
+    "topic": "Auto-RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q038",
+    "question": "How can Auto-RAG reduce hallucinations compared to standard RAG?",
+    "ground_truth": "Auto-RAG can reduce hallucinations by evaluating retrieval quality, correcting poor retrieval results through query rewriting, and verifying whether generated answers are supported by retrieved evidence before returning them to the user.",
+    "expected_source": "Self-RAG (Asai et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q039",
+    "question": "What is retrieval error recovery in Auto-RAG systems?",
+    "ground_truth": "Retrieval error recovery refers to mechanisms that detect poor retrieval results and attempt corrective actions such as query rewriting, alternative retrieval strategies, or additional retrieval iterations.",
+    "expected_source": "Corrective Retrieval Research",
+    "topic": "Auto-RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q040",
+    "question": "Why is it important to compare Auto-RAG with Standard RAG in experiments?",
+    "ground_truth": "Comparing Auto-RAG with Standard RAG allows researchers to quantify the benefits of self-reflection, query rewriting, and corrective retrieval mechanisms using objective evaluation metrics such as faithfulness, answer relevancy, context precision, and latency.",
+    "expected_source": "RAG Evaluation Studies",
+    "topic": "Auto-RAG",
+    "difficulty": "easy"
+  }
+  ,
+  {
+    "id": "q041",
+    "question": "What is hallucination in retrieval-augmented generation systems?",
+    "ground_truth": "Hallucination occurs when a language model generates information that is unsupported, fabricated, or inconsistent with the retrieved evidence or known facts.",
+    "expected_source": "Survey on LLM Hallucinations",
+    "topic": "faithfulness",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q042",
+    "question": "Why can a retrieved context still lead to hallucinated answers?",
+    "ground_truth": "Hallucinations can still occur even with retrieved context if the model misinterprets the evidence, overgeneralizes from incomplete information, or generates unsupported claims beyond the retrieved content.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q043",
+    "question": "What is claim verification in faithfulness evaluation?",
+    "ground_truth": "Claim verification is the process of checking whether statements in a generated answer are supported by the retrieved context or trusted evidence sources.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q044",
+    "question": "How does RAGAS measure faithfulness?",
+    "ground_truth": "RAGAS measures faithfulness by extracting claims from generated answers and evaluating whether those claims are supported by the retrieved context.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q045",
+    "question": "What is an unsupported claim in a generated answer?",
+    "ground_truth": "An unsupported claim is a statement that cannot be verified using the retrieved context and therefore may represent a hallucination or factual error.",
+    "expected_source": "Faithfulness Evaluation Research",
+    "topic": "faithfulness",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q046",
+    "question": "Why is faithfulness important in academic question answering systems?",
+    "ground_truth": "Academic question answering systems require faithfulness because users expect answers to be supported by evidence from scholarly sources rather than generated from unsupported model assumptions.",
+    "expected_source": "Academic QA Research",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q047",
+    "question": "How can retrieved evidence be used to reduce hallucinations?",
+    "ground_truth": "Retrieved evidence constrains generation by providing factual grounding, allowing the model to generate answers based on verifiable information rather than relying solely on parametric knowledge.",
+    "expected_source": "RAG paper (Lewis et al., 2020)",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q048",
+    "question": "What is evidence grounding in retrieval-augmented generation?",
+    "ground_truth": "Evidence grounding refers to the process of ensuring that generated statements are directly supported by retrieved documents or external evidence sources.",
+    "expected_source": "Grounded Generation Research",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q049",
+    "question": "Can an answer be relevant but not faithful?",
+    "ground_truth": "Yes. An answer may appear relevant to a question while still containing unsupported or incorrect statements that are not grounded in the retrieved context.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q050",
+    "question": "What is the relationship between faithfulness and factual correctness?",
+    "ground_truth": "Faithfulness evaluates whether an answer is supported by the provided context, while factual correctness evaluates whether the answer is objectively true. An answer may be faithful to incorrect context or factually correct without being supported by the retrieved evidence.",
+    "expected_source": "Evaluation of Generative Systems Research",
+    "topic": "faithfulness",
+    "difficulty": "hard"
+  }
+  ,
+  {
+    "id": "q051",
+    "question": "Why is a benchmark dataset important for evaluating RAG systems?",
+    "ground_truth": "A benchmark dataset provides a standardized set of questions and expected answers that enable fair, reproducible, and comparable evaluation of retrieval-augmented generation systems.",
+    "expected_source": "IR Evaluation Literature",
+    "topic": "evaluation",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q052",
+    "question": "What is reproducibility in information retrieval experiments?",
+    "ground_truth": "Reproducibility refers to the ability of independent researchers to obtain the same experimental results using the same data, methodology, and evaluation procedures.",
+    "expected_source": "Scientific Reproducibility Research",
+    "topic": "evaluation",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q053",
+    "question": "What is an ablation study and why is it useful?",
+    "ground_truth": "An ablation study evaluates the contribution of individual system components by removing or modifying them and measuring the resulting performance changes.",
+    "expected_source": "Machine Learning Evaluation Literature",
+    "topic": "evaluation",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q054",
+    "question": "Why should Standard RAG and Auto-RAG be evaluated on the same dataset?",
+    "ground_truth": "Using the same dataset ensures a fair comparison by controlling for differences in questions, topics, and difficulty levels.",
+    "expected_source": "Experimental Design Literature",
+    "topic": "evaluation",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q055",
+    "question": "What is latency and why is it important in RAG evaluation?",
+    "ground_truth": "Latency measures the time required to generate a response. It is important because improved answer quality may come at the cost of slower response times.",
+    "expected_source": "RAG System Evaluation Studies",
+    "topic": "evaluation",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q056",
+    "question": "Why should retrieval quality and generation quality be evaluated separately?",
+    "ground_truth": "Retrieval quality and generation quality are distinct components of a RAG system. Poor retrieval can limit answer quality even when the generator is strong, while strong retrieval cannot compensate for poor generation.",
+    "expected_source": "RAG Evaluation Research",
+    "topic": "evaluation",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q057",
+    "question": "What is statistical significance in experimental evaluation?",
+    "ground_truth": "Statistical significance indicates whether observed performance differences are likely due to actual system improvements rather than random variation.",
+    "expected_source": "Experimental Statistics Literature",
+    "topic": "evaluation",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q058",
+    "question": "Why are multiple evaluation metrics necessary in RAG systems?",
+    "ground_truth": "Different metrics capture different aspects of system performance, such as faithfulness, relevance, retrieval quality, and efficiency. No single metric provides a complete evaluation.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "evaluation",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q059",
+    "question": "What is a baseline model in experimental research?",
+    "ground_truth": "A baseline model is a reference system used for comparison to determine whether a proposed method provides meaningful improvements.",
+    "expected_source": "Machine Learning Research Methodology",
+    "topic": "evaluation",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q060",
+    "question": "Why is benchmarking essential for Auto-RAG research?",
+    "ground_truth": "Benchmarking provides quantitative evidence that Auto-RAG improves retrieval quality, faithfulness, or answer relevance compared to standard retrieval-augmented generation approaches.",
+    "expected_source": "Auto-RAG Evaluation Studies",
+    "topic": "evaluation",
+    "difficulty": "medium"
+  }
+  ,
+  {
+    "id": "q061",
+    "question": "What is arXiv and why is it widely used in academic research?",
+    "ground_truth": "arXiv is an open-access repository of scientific preprints that allows researchers to share papers before formal peer review. It is widely used because it provides rapid dissemination of research findings.",
+    "expected_source": "arXiv Documentation",
+    "topic": "academic search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q062",
+    "question": "What is CORE and how does it support open-access research?",
+    "ground_truth": "CORE aggregates open-access research outputs from repositories and journals worldwide, providing unified access to millions of scholarly documents.",
+    "expected_source": "CORE Documentation",
+    "topic": "academic search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q063",
+    "question": "Why are open-access papers valuable for retrieval-augmented generation systems?",
+    "ground_truth": "Open-access papers provide legally accessible, high-quality scholarly content that can be indexed and retrieved to support evidence-based question answering.",
+    "expected_source": "Open Science Literature",
+    "topic": "academic search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q064",
+    "question": "What metadata fields are important when indexing academic papers?",
+    "ground_truth": "Important metadata fields include title, authors, abstract, publication year, keywords, DOI, source URL, and subject categories.",
+    "expected_source": "Digital Library Research",
+    "topic": "academic search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q065",
+    "question": "Why is citation information important in academic retrieval systems?",
+    "ground_truth": "Citation information improves transparency, supports verification of claims, and helps users trace generated answers back to original scholarly sources.",
+    "expected_source": "Scholarly Search Research",
+    "topic": "academic search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q066",
+    "question": "What challenges arise when extracting text from scientific PDFs?",
+    "ground_truth": "Scientific PDFs may contain multi-column layouts, formulas, figures, tables, and references that complicate accurate text extraction.",
+    "expected_source": "PDF Processing Research",
+    "topic": "academic search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q067",
+    "question": "Why is document chunking particularly important for academic papers?",
+    "ground_truth": "Academic papers are long and information-dense. Chunking allows relevant sections to be retrieved efficiently while preserving semantic coherence.",
+    "expected_source": "RAG System Design Literature",
+    "topic": "academic search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q068",
+    "question": "What is the role of abstracts in academic search systems?",
+    "ground_truth": "Abstracts provide concise summaries of research contributions and are often used for indexing, ranking, and relevance estimation.",
+    "expected_source": "Information Retrieval Research",
+    "topic": "academic search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q069",
+    "question": "How can academic search systems benefit from semantic retrieval?",
+    "ground_truth": "Semantic retrieval enables discovery of conceptually related papers even when different terminology is used, improving recall beyond exact keyword matching.",
+    "expected_source": "Dense Retrieval Research",
+    "topic": "academic search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q070",
+    "question": "Why is source attribution important in retrieval-augmented academic assistants?",
+    "ground_truth": "Source attribution increases trust, enables verification, supports reproducibility, and helps users identify the origin of generated information.",
+    "expected_source": "Explainable AI Research",
+    "topic": "academic search",
+    "difficulty": "easy"
+  }
+  ,
+  {
+    "id": "q071",
+    "question": "What is cosine similarity and why is it commonly used in vector search?",
+    "ground_truth": "Cosine similarity measures the angle between two vectors and is commonly used in vector search because it captures semantic similarity independent of vector magnitude.",
+    "expected_source": "Vector Search Literature",
+    "topic": "vector search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q072",
+    "question": "What is an embedding in natural language processing?",
+    "ground_truth": "An embedding is a dense numerical representation of text that captures semantic meaning in a continuous vector space.",
+    "expected_source": "Embedding Research",
+    "topic": "vector search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q073",
+    "question": "Why are embeddings useful for semantic retrieval?",
+    "ground_truth": "Embeddings allow semantically similar texts to be located near each other in vector space, enabling retrieval beyond exact keyword matching.",
+    "expected_source": "Dense Retrieval Research",
+    "topic": "vector search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q074",
+    "question": "What is embedding dimensionality?",
+    "ground_truth": "Embedding dimensionality refers to the number of numerical values used to represent a text embedding vector.",
+    "expected_source": "Representation Learning Literature",
+    "topic": "vector search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q075",
+    "question": "How does semantic search differ from keyword search?",
+    "ground_truth": "Semantic search retrieves documents based on meaning, while keyword search relies primarily on lexical overlap between query and document terms.",
+    "expected_source": "Information Retrieval Research",
+    "topic": "vector search",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q076",
+    "question": "What is vector indexing and why is it necessary?",
+    "ground_truth": "Vector indexing organizes embeddings into efficient data structures that enable fast nearest-neighbor search over large collections.",
+    "expected_source": "FAISS Documentation",
+    "topic": "vector search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q077",
+    "question": "What is semantic drift in embedding-based retrieval?",
+    "ground_truth": "Semantic drift occurs when retrieved results become increasingly unrelated to the original intent due to overly broad semantic matching.",
+    "expected_source": "Semantic Retrieval Research",
+    "topic": "vector search",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q078",
+    "question": "Why can dense retrieval outperform keyword retrieval on paraphrased queries?",
+    "ground_truth": "Dense retrieval captures semantic meaning and can identify relevant documents even when query wording differs significantly from document wording.",
+    "expected_source": "DPR paper (Karpukhin et al., 2020)",
+    "topic": "vector search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q079",
+    "question": "What is nearest neighbor search in vector databases?",
+    "ground_truth": "Nearest neighbor search identifies vectors that are closest to a query vector according to a similarity metric such as cosine similarity or Euclidean distance.",
+    "expected_source": "FAISS paper (Johnson et al., 2019)",
+    "topic": "vector search",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q080",
+    "question": "Why are vector databases important for modern RAG systems?",
+    "ground_truth": "Vector databases enable efficient storage and retrieval of embeddings, allowing RAG systems to perform scalable semantic search over large document collections.",
+    "expected_source": "Vector Database Documentation",
+    "topic": "vector search",
+    "difficulty": "easy"
+  }
+  ,
+  {
+    "id": "q081",
+    "question": "What is query expansion in information retrieval?",
+    "ground_truth": "Query expansion is the process of adding related terms or concepts to a user's query in order to improve retrieval recall and discover relevant documents that may use different terminology.",
+    "expected_source": "Information Retrieval Literature",
+    "topic": "query rewriting",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q082",
+    "question": "How does query rewriting differ from query expansion?",
+    "ground_truth": "Query rewriting reformulates a query into a clearer or more retrieval-friendly version, while query expansion adds additional related terms without necessarily changing the original query structure.",
+    "expected_source": "Query Reformulation Research",
+    "topic": "query rewriting",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q083",
+    "question": "What is vocabulary mismatch in information retrieval?",
+    "ground_truth": "Vocabulary mismatch occurs when users and documents use different words to describe the same concept, making relevant documents difficult to retrieve using keyword-based methods.",
+    "expected_source": "Information Retrieval Literature",
+    "topic": "query rewriting",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q084",
+    "question": "Why can ambiguous queries reduce retrieval quality?",
+    "ground_truth": "Ambiguous queries may correspond to multiple meanings or intents, causing retrieval systems to return documents that are only partially relevant to the user's actual information need.",
+    "expected_source": "Search Engine Research",
+    "topic": "query rewriting",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q085",
+    "question": "How can LLMs be used for query rewriting?",
+    "ground_truth": "LLMs can analyze the user's intent, identify ambiguities, expand missing context, and generate reformulated queries that improve retrieval effectiveness.",
+    "expected_source": "LLM-based Query Reformulation Research",
+    "topic": "query rewriting",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q086",
+    "question": "What is retrieval failure in a RAG system?",
+    "ground_truth": "Retrieval failure occurs when the retrieval component cannot find sufficient relevant documents to answer a user's question accurately.",
+    "expected_source": "RAG System Evaluation Research",
+    "topic": "query rewriting",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q087",
+    "question": "How can iterative retrieval improve retrieval performance?",
+    "ground_truth": "Iterative retrieval improves performance by repeatedly refining queries and retrieving new evidence until sufficient relevant information is obtained.",
+    "expected_source": "Iterative Retrieval Research",
+    "topic": "query rewriting",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q088",
+    "question": "What is semantic query reformulation?",
+    "ground_truth": "Semantic query reformulation modifies a query based on meaning rather than exact keywords, enabling retrieval systems to discover conceptually related information.",
+    "expected_source": "Semantic Retrieval Research",
+    "topic": "query rewriting",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q089",
+    "question": "Why is query rewriting particularly useful in academic search?",
+    "ground_truth": "Academic literature often uses specialized terminology, abbreviations, and domain-specific language. Query rewriting helps bridge terminology gaps and improve retrieval coverage.",
+    "expected_source": "Academic Search Research",
+    "topic": "query rewriting",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q090",
+    "question": "What are the trade-offs of query rewriting in Auto-RAG systems?",
+    "ground_truth": "Query rewriting can improve retrieval quality but may increase latency, computational cost, and the risk of altering the user's original intent through semantic drift.",
+    "expected_source": "Auto-RAG Evaluation Research",
+    "topic": "query rewriting",
+    "difficulty": "hard"
+  }
+  ,
+  {
+    "id": "q091",
+    "question": "What is explainability in artificial intelligence systems?",
+    "ground_truth": "Explainability refers to the ability of an AI system to provide understandable reasons, evidence, or justifications for its outputs and decisions.",
+    "expected_source": "Explainable AI Literature",
+    "topic": "explainability",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q092",
+    "question": "Why is explainability important in retrieval-augmented generation systems?",
+    "ground_truth": "Explainability helps users understand which retrieved sources influenced the generated answer and increases trust in the system's outputs.",
+    "expected_source": "XAI Research",
+    "topic": "explainability",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q093",
+    "question": "What is source attribution in academic question answering systems?",
+    "ground_truth": "Source attribution is the process of linking generated statements to the original documents or passages from which the information was obtained.",
+    "expected_source": "Academic QA Research",
+    "topic": "explainability",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q094",
+    "question": "How do citations improve trust in generated answers?",
+    "ground_truth": "Citations allow users to verify claims against original sources, increasing transparency and reducing concerns about hallucinated information.",
+    "expected_source": "Scholarly Communication Research",
+    "topic": "explainability",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q095",
+    "question": "What is provenance in information systems?",
+    "ground_truth": "Provenance refers to the documented origin and history of information, including where it came from and how it was processed.",
+    "expected_source": "Data Provenance Research",
+    "topic": "explainability",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q096",
+    "question": "Why is provenance important in academic retrieval systems?",
+    "ground_truth": "Provenance enables users to trace information back to its scholarly source, supporting verification, reproducibility, and accountability.",
+    "expected_source": "Academic Information Systems Research",
+    "topic": "explainability",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q097",
+    "question": "What information should be included in a citation generated by an academic assistant?",
+    "ground_truth": "Useful citations should include the paper title, authors, publication year, page or section information, and a source link when available.",
+    "expected_source": "Academic Publishing Standards",
+    "topic": "explainability",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q098",
+    "question": "How can retrieval scores contribute to explainability?",
+    "ground_truth": "Retrieval scores help users understand why particular documents were selected by indicating their estimated relevance to the query.",
+    "expected_source": "Information Retrieval Research",
+    "topic": "explainability",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q099",
+    "question": "Why should generated answers expose their supporting evidence?",
+    "ground_truth": "Supporting evidence allows users to independently evaluate claims, detect potential errors, and verify that answers are grounded in retrieved information.",
+    "expected_source": "Evidence-Based AI Research",
+    "topic": "explainability",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q100",
+    "question": "How does source transparency help reduce the impact of hallucinations?",
+    "ground_truth": "Source transparency enables users to compare generated answers against cited evidence, making unsupported claims easier to detect and correct.",
+    "expected_source": "Explainable Retrieval-Augmented Generation Research",
+    "topic": "explainability",
+    "difficulty": "medium"
+  }
 ]
