@@ -17,6 +17,12 @@ class VectorRetriever:
         for i, emb in enumerate(self.embeddings):
             score = cosine_similarity(query_embedding, emb)
             scores.append((score, self.chunks[i]))
+        
+        scores.sort(key=lambda x: x[0], reverse=True)
+
+        top_chunks = [chunk for _, chunk in scores[:k]]
+
+        return top_chunks
 
         scores.sort(key=lambda x: x[0], reverse=True)
         return [chunk for _, chunk in scores[:k]]

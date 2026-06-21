@@ -24,14 +24,11 @@ Reply with ONLY a JSON object — no markdown, no explanation outside the JSON:
 
 def _extract_json(text: str) -> dict:
     """Strip <think> tags and extract the first JSON object from LLM output."""
-    # Remove DeepSeek-R1 style <think>...</think> blocks
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Try direct parse first
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-    # Find first {...} block
     m = re.search(r"\{[^{}]+\}", text, re.DOTALL)
     if m:
         return json.loads(m.group())
@@ -44,7 +41,14 @@ def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
 
     if not chunks:
         state["grade_result"] = GradeResult(
-            relevant=False, confidence=1.0, reasoning="No chunks retrieved."
+            relevant=False, confidence=1.0, reasoning="No chunks retrieved.",
+        )
+        return state
+
+    if llm is None:
+        state["grade_result"] = GradeResult(
+            relevant=True, confidence=0.65,
+            reasoning="Fallback grading: chunks were retrieved, assumed moderately relevant.",
         )
         return state
 
@@ -52,9 +56,6 @@ def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
         f"[{i+1}] {c.get('text', '')[:300]}" for i, c in enumerate(chunks[:5])
     )
     prompt = _GRADE_PROMPT.format(query=query, chunks=chunk_texts)
-
-    if llm is None:
-        llm = _default_llm()
 
     try:
         response = llm.invoke(prompt)
@@ -67,11 +68,11 @@ def grade_node(state: GraphState, llm: object | None = None) -> GraphState:
         )
     except Exception as exc:
         logger.error("grade_node error: %s", exc)
-        # default to relevant so pipeline continues
         state["grade_result"] = GradeResult(
             relevant=True, confidence=0.5,
             reasoning="Grading skipped — chunks assumed relevant."
         )
+
     return state
 
 

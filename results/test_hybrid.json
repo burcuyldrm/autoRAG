@@ -1,0 +1,23 @@
+{
+  "experiment_name": "retrieval_hybrid",
+  "experiment_type": "retrieval",
+  "timestamp": "2026-06-18T18:29:33",
+  "model_name": null,
+  "provider": null,
+  "retriever_type": "hybrid",
+  "chunk_size": null,
+  "top_k": null,
+  "faithfulness": null,
+  "answer_relevancy": null,
+  "context_precision": null,
+  "context_recall": null,
+  "latency_seconds": null,
+  "avg_latency_seconds": null,
+  "rewrite_count": 0,
+  "avg_rewrite_count": 0.0,
+  "token_usage": null,
+  "cost_estimate": null,
+  "n_questions": 25,
+  "retrieval_mode": "hybrid",
+  "n_queries": 25
+}

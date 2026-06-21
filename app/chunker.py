@@ -1,5 +1,7 @@
-from typing import TypedDict, List, Dict, Any
+from __future__ import annotations
+
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, TypedDict
 
 import uuid
 
@@ -8,8 +10,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 @dataclass
 class ChunkerConfig:
-    chunk_size: int = 512
-    chunk_overlap: int = 50
+    chunk_size: int = 1024
+    chunk_overlap: int = 200
     separators: List[str] = field(default_factory=lambda: ["\n\n", "\n", ". ", " ", ""])
 
 
@@ -39,13 +41,12 @@ def create_chunks(
     all_chunks: List[Chunk] = []
 
     for page_data in pages:
-        text = page_data.get("text", "")
-        page_chunks = split_text(text, config)
+        chunks = split_text(page_data["text"], config)
 
-        for index, chunk_text in enumerate(page_chunks):
+        for i, chunk_text_item in enumerate(chunks):
             chunk: Chunk = {
-                "id": f"{page_data.get('paper_id')}_p{page_data.get('page')}_c{index}_{uuid.uuid4().hex[:8]}",
-                "text": chunk_text,
+                "id": f'{page_data.get("paper_id", uuid.uuid4().hex)}_{page_data.get("page", 0)}_{i}',
+                "text": chunk_text_item,
                 "metadata": {
                     "paper_id": page_data.get("paper_id"),
                     "page": page_data.get("page"),

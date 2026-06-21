@@ -14,6 +14,8 @@ import os
 import time
 from typing import Any
 
+from eval.metrics_schema import ExperimentResult
+
 logger = logging.getLogger(__name__)
 
 RETRIEVAL_MODES = ("dense", "hybrid")
@@ -54,14 +56,11 @@ def run_retrieval_experiment(
     return records
 
 
-def compute_answer_relevancy(records: list[dict[str, Any]]) -> float:
-    from datasets import Dataset
-    from ragas import evaluate
-    from ragas.metrics import answer_relevancy
+def compute_answer_relevancy(records: list[dict[str, Any]]) -> float | None:
+    from eval.benchmark_runner import compute_ragas_metrics_safe
 
-    ds = Dataset.from_list(records)
-    result = evaluate(ds, metrics=[answer_relevancy])
-    return float(result["answer_relevancy"])
+    metrics = compute_ragas_metrics_safe(records)
+    return metrics.get("answer_relevancy")
 
 
 def save_results(results: dict[str, Any], output_path: str) -> None:
@@ -99,14 +98,21 @@ def main() -> None:
     )
     score = compute_answer_relevancy(records)
 
-    results = {
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "retrieval_mode": args.retrieval_mode,
-        "n_queries": len(queries),
-        "answer_relevancy": score,
+    result = ExperimentResult(
+        experiment_name=f"retrieval_{args.retrieval_mode}",
+        experiment_type="retrieval",
+        retriever_type=args.retrieval_mode,
+        answer_relevancy=score,
+        n_questions=len(queries),
+    )
+    output = {
+        "benchmark_name": "retrieval_comparison",
+        "dataset_path": args.queries,
+        "n_questions": len(queries),
+        "experiments": [result.to_dict()],
     }
-    save_results(results, args.output)
-    print(json.dumps(results, indent=2))
+    save_results(output, args.output)
+    print(json.dumps(output, indent=2))
 
 
 if __name__ == "__main__":

@@ -16,6 +16,8 @@ import os
 import time
 from typing import Any, Protocol
 
+from eval.metrics_schema import ExperimentResult
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +34,7 @@ def run_chain_on_dataset(
     chain: RAGChain,
     dataset: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Returns list of {question, answer, contexts, ground_truth}."""
+    """Returns list of {question, answer, contexts, ground_truth, rewrite_count, latency_seconds, grade_confidence}."""
     records = []
     for item in dataset:
         question = item["question"]
@@ -41,31 +43,46 @@ def run_chain_on_dataset(
             output = chain.run(question)
             answer = output.get("answer", "")
             contexts = output.get("contexts", [])
+            rewrite_count = output.get("rewrite_count", 0)
+            latency = output.get("latency_seconds", 0.0)
+            grade_confidence = output.get("grade_confidence", None)
         except Exception as exc:
             logger.warning("Chain failed for question %r: %s", question[:50], exc)
             answer = ""
             contexts = []
+            rewrite_count = 0
+            latency = 0.0
+            grade_confidence = None
         records.append(
             {
                 "question": question,
                 "answer": answer,
                 "contexts": contexts,
                 "ground_truth": ground_truth,
+                "rewrite_count": rewrite_count,
+                "latency_seconds": latency,
+                "grade_confidence": grade_confidence,
             }
         )
     return records
 
 
 def compute_ragas_metrics(records: list[dict[str, Any]]) -> dict[str, float]:
-    """Compute RAGAS metrics using the ragas library."""
+    """Compute RAGAS metrics using local Ollama LLM + sentence-transformers (no API key)."""
     from datasets import Dataset
     from ragas import evaluate
     from ragas.metrics import answer_relevancy, context_precision, faithfulness
+    from app.llm_factory import get_ragas_embeddings, get_ragas_llm
+
+    ragas_llm = get_ragas_llm(fast=True)
+    ragas_embeddings = get_ragas_embeddings()
 
     ds = Dataset.from_list(records)
     result = evaluate(
         ds,
         metrics=[faithfulness, answer_relevancy, context_precision],
+        llm=ragas_llm,
+        embeddings=ragas_embeddings,
     )
     return {
         "faithfulness": float(result["faithfulness"]),
@@ -95,11 +112,39 @@ def run_evaluation(
     autorag_records = run_chain_on_dataset(autorag_chain, dataset)
     autorag_metrics = compute_ragas_metrics(autorag_records)
 
+    def _avg(records: list[dict], key: str, default: float = 0.0) -> float:
+        vals = [r[key] for r in records if r.get(key) is not None]
+        return sum(vals) / len(vals) if vals else default
+
+    ts = time.strftime("%Y-%m-%dT%H:%M:%S")
+    standard_result = ExperimentResult(
+        experiment_name="standard_rag",
+        experiment_type="comparison",
+        timestamp=ts,
+        n_questions=len(dataset),
+        avg_latency_seconds=_avg(standard_records, "latency_seconds"),
+        **standard_metrics,
+    )
+    autorag_result = ExperimentResult(
+        experiment_name="auto_rag",
+        experiment_type="comparison",
+        timestamp=ts,
+        n_questions=len(dataset),
+        avg_rewrite_count=_avg(autorag_records, "rewrite_count"),
+        avg_latency_seconds=_avg(autorag_records, "latency_seconds"),
+        **autorag_metrics,
+    )
     results = {
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "timestamp": ts,
+        "experiment_type": "comparison",
         "n_questions": len(dataset),
         "standard_rag": standard_metrics,
-        "auto_rag": autorag_metrics,
+        "auto_rag": {
+            **autorag_metrics,
+            "avg_rewrite_count": autorag_result.avg_rewrite_count,
+            "avg_latency_seconds": autorag_result.avg_latency_seconds,
+        },
+        "experiments": [standard_result.to_dict(), autorag_result.to_dict()],
     }
     save_results(results, output_path)
     return results

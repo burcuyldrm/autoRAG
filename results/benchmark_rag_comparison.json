@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-06-20T18:18:36",
+  "n_experiments": 2,
+  "benchmark_name": "standard_vs_autorag",
+  "n_questions": 30,
+  "dataset_path": "data/qa_dataset.json",
+  "experiments": [
+    {
+      "experiment_name": "standard_rag",
+      "experiment_type": "comparison",
+      "timestamp": "2026-06-20T18:18:36",
+      "model_name": null,
+      "provider": null,
+      "retriever_type": null,
+      "chunk_size": null,
+      "top_k": null,
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": null,
+      "context_recall": null,
+      "latency_seconds": null,
+      "avg_latency_seconds": 0.05,
+      "rewrite_count": 0,
+      "avg_rewrite_count": 0.0,
+      "token_usage": null,
+      "cost_estimate": null,
+      "n_questions": 30
+    },
+    {
+      "experiment_name": "auto_rag",
+      "experiment_type": "comparison",
+      "timestamp": "2026-06-20T18:18:36",
+      "model_name": null,
+      "provider": null,
+      "retriever_type": null,
+      "chunk_size": null,
+      "top_k": null,
+      "faithfulness": null,
+      "answer_relevancy": null,
+      "context_precision": null,
+      "context_recall": null,
+      "latency_seconds": null,
+      "avg_latency_seconds": 0.05,
+      "rewrite_count": 0,
+      "avg_rewrite_count": 1.0,
+      "token_usage": null,
+      "cost_estimate": null,
+      "n_questions": 30
+    }
+  ]
+}

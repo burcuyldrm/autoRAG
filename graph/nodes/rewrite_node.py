@@ -35,7 +35,7 @@ def rewrite_node(state: GraphState, llm=None) -> GraphState:
         state["rewritten_query"] = rewritten if rewritten else query
     except Exception as exc:
         logger.error("rewrite_node error: %s", exc)
-        state["rewritten_query"] = query  # fallback — keep original
+        state["rewritten_query"] = query
 
     state["iteration"] = state.get("iteration", 0) + 1
     return state

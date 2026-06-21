@@ -27,7 +27,6 @@ def get_llm(temperature: float = 0):
             google_api_key=os.environ["GOOGLE_API_KEY"],
         )
 
-    # Local Ollama — no API key needed
     ollama_model = os.environ.get("OLLAMA_MODEL", "deepseek-r1:7b")
     ollama_base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
     from langchain_ollama import ChatOllama
@@ -36,12 +35,7 @@ def get_llm(temperature: float = 0):
 
 
 def get_fast_llm(temperature: float = 0):
-    """Lightweight LLM for grade/rewrite nodes.
-
-    When cloud keys exist the same model is already fast, so we reuse it.
-    Locally we spin up a small model (qwen2.5:3b) with a token cap so
-    grading takes ~1 s instead of ~25 s.
-    """
+    """Lightweight LLM for grade/rewrite nodes."""
     if os.environ.get("OPENAI_API_KEY") or os.environ.get("GOOGLE_API_KEY"):
         return get_llm(temperature)
 
@@ -49,10 +43,21 @@ def get_fast_llm(temperature: float = 0):
     ollama_base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
     from langchain_ollama import ChatOllama
     logger.info("Using fast Ollama (local): %s @ %s", fast_model, ollama_base)
-    # num_predict caps output tokens — grade needs <100, rewrite <60
     return ChatOllama(
         model=fast_model,
         base_url=ollama_base,
         temperature=temperature,
         num_predict=200,
     )
+
+
+def get_ragas_llm(fast: bool = True):
+    from ragas.llms import LangchainLLMWrapper
+    return LangchainLLMWrapper(get_fast_llm() if fast else get_llm())
+
+
+def get_ragas_embeddings():
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+    from ragas.embeddings import LangchainEmbeddingsWrapper
+    hf = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    return LangchainEmbeddingsWrapper(hf)

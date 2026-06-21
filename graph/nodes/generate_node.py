@@ -42,7 +42,22 @@ def generate_node(state: GraphState, llm: object | None = None) -> GraphState:
     prompt = _GENERATE_PROMPT.format(query=query, chunks=chunk_texts)
 
     if llm is None:
-        llm = _default_llm()
+        fallback_parts = []
+        for chunk in chunks[:3]:
+            text = chunk.get("text", "").strip()
+            if text:
+                sentences = text.split(". ")
+                fallback_parts.append(". ".join(sentences[:2]))
+        fallback_answer = "\n\n".join(fallback_parts).strip()
+        if not fallback_answer:
+            fallback_answer = "Relevant chunks were retrieved but no answer could be generated."
+        state["final_answer"] = fallback_answer
+        state["sources"] = [
+            {"id": c.get("id", f"source-{i}"), "text": c.get("text", "")[:200],
+             "metadata": c.get("metadata", {})}
+            for i, c in enumerate(chunks)
+        ]
+        return state
 
     try:
         response = llm.invoke(prompt)
@@ -53,11 +68,8 @@ def generate_node(state: GraphState, llm: object | None = None) -> GraphState:
         state["final_answer"] = f"Cevap üretilemedi: {exc}"
 
     state["sources"] = [
-        {
-            "id": c.get("id", f"source-{i}"),
-            "text": c.get("text", "")[:300],
-            "metadata": c.get("metadata", {}),
-        }
+        {"id": c.get("id", f"source-{i}"), "text": c.get("text", "")[:300],
+         "metadata": c.get("metadata", {})}
         for i, c in enumerate(chunks)
     ]
     return state

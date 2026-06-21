@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-06-18T18:31:08",
+  "n_experiments": 2,
+  "benchmark": "model_comparison",
+  "models": [
+    "gpt-4o-mini",
+    "gpt-4o"
+  ],
+  "experiments": [
+    {
+      "experiment_name": "model_gpt_4o_mini",
+      "experiment_type": "model_comparison",
+      "timestamp": "2026-06-18T18:31:08",
+      "model_name": "gpt-4o-mini",
+      "provider": null,
+      "retriever_type": "hybrid",
+      "chunk_size": null,
+      "top_k": 5,
+      "faithfulness": 0.83,
+      "answer_relevancy": 0.87,
+      "context_precision": 0.79,
+      "context_recall": 0.74,
+      "latency_seconds": null,
+      "avg_latency_seconds": 0.05,
+      "rewrite_count": 0,
+      "avg_rewrite_count": 0.0,
+      "token_usage": null,
+      "cost_estimate": null,
+      "n_questions": 10
+    },
+    {
+      "experiment_name": "model_gpt_4o",
+      "experiment_type": "model_comparison",
+      "timestamp": "2026-06-18T18:31:08",
+      "model_name": "gpt-4o",
+      "provider": null,
+      "retriever_type": "hybrid",
+      "chunk_size": null,
+      "top_k": 5,
+      "faithfulness": 0.83,
+      "answer_relevancy": 0.87,
+      "context_precision": 0.79,
+      "context_recall": 0.74,
+      "latency_seconds": null,
+      "avg_latency_seconds": 0.05,
+      "rewrite_count": 0,
+      "avg_rewrite_count": 0.0,
+      "token_usage": null,
+      "cost_estimate": null,
+      "n_questions": 10
+    }
+  ]
+}

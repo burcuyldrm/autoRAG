@@ -24,7 +24,6 @@ class HybridRetriever:
             scores[key] = scores.get(key, 0) + rrf_score(rank)
 
         sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
         result = []
         for text, _ in sorted_items[:top_k]:
             for item in self.vector_results + self.bm25_results:
