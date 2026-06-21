@@ -30,7 +30,7 @@ def get_llm(fast: bool = False):
         If True, use OLLAMA_FAST_MODEL (smaller, quicker).
         If False, use OLLAMA_MODEL (larger, better quality).
     """
-    from langchain_community.chat_models import ChatOllama
+    from langchain_ollama import ChatOllama
 
     model = _FAST_MODEL if fast else _MODEL
     logger.info("LLM factory: ChatOllama(model=%r, base_url=%r)", model, _BASE_URL)
