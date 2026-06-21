@@ -239,4 +239,166 @@
     "topic": "hybrid retrieval",
     "difficulty": "hard"
   }
+  ,
+  {
+    "id": "q031",
+    "question": "Why does query rewriting improve retrieval quality in Auto-RAG systems?",
+    "ground_truth": "Query rewriting improves retrieval quality by reformulating ambiguous, incomplete, or poorly specified user queries into more retrieval-friendly forms. This helps retrieval systems find more relevant documents and reduces retrieval failures.",
+    "expected_source": "Self-RAG (Asai et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q032",
+    "question": "What is iterative retrieval in retrieval-augmented generation systems?",
+    "ground_truth": "Iterative retrieval is a process where retrieval is performed multiple times, often using updated queries or intermediate results, to progressively improve the relevance and completeness of retrieved information.",
+    "expected_source": "Iterative Retrieval Research",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q033",
+    "question": "What is self-reflection in Auto-RAG systems?",
+    "ground_truth": "Self-reflection refers to the ability of a system to evaluate its own retrieval or generation outputs and decide whether additional retrieval, query rewriting, or corrective actions are necessary.",
+    "expected_source": "Self-RAG (Asai et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q034",
+    "question": "How does a retrieval grader work in self-reflective RAG systems?",
+    "ground_truth": "A retrieval grader evaluates whether retrieved documents contain sufficient information to answer a query. It typically produces a relevance label and a confidence score that guide subsequent retrieval or rewriting decisions.",
+    "expected_source": "CRAG paper (Yan et al., 2024)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q035",
+    "question": "Why can the first retrieval attempt fail in a RAG system?",
+    "ground_truth": "The first retrieval attempt may fail due to ambiguous wording, vocabulary mismatch, insufficient indexing, poor query formulation, or limitations of the retrieval model. Such failures motivate corrective retrieval mechanisms.",
+    "expected_source": "RAG Survey (Gao et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q036",
+    "question": "What is retrieval confidence and how is it used in Auto-RAG?",
+    "ground_truth": "Retrieval confidence is an estimate of how relevant and useful retrieved documents are for answering a query. Auto-RAG systems use confidence scores to determine whether retrieval results should be accepted or improved through query rewriting.",
+    "expected_source": "CRAG paper (Yan et al., 2024)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q037",
+    "question": "What are the risks of excessive query rewriting?",
+    "ground_truth": "Excessive query rewriting may introduce semantic drift, alter the user's original intent, increase latency, and retrieve documents that are less relevant than those obtained using the original query.",
+    "expected_source": "Query Reformulation Research",
+    "topic": "Auto-RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q038",
+    "question": "How can Auto-RAG reduce hallucinations compared to standard RAG?",
+    "ground_truth": "Auto-RAG can reduce hallucinations by evaluating retrieval quality, correcting poor retrieval results through query rewriting, and verifying whether generated answers are supported by retrieved evidence before returning them to the user.",
+    "expected_source": "Self-RAG (Asai et al., 2023)",
+    "topic": "Auto-RAG",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q039",
+    "question": "What is retrieval error recovery in Auto-RAG systems?",
+    "ground_truth": "Retrieval error recovery refers to mechanisms that detect poor retrieval results and attempt corrective actions such as query rewriting, alternative retrieval strategies, or additional retrieval iterations.",
+    "expected_source": "Corrective Retrieval Research",
+    "topic": "Auto-RAG",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q040",
+    "question": "Why is it important to compare Auto-RAG with Standard RAG in experiments?",
+    "ground_truth": "Comparing Auto-RAG with Standard RAG allows researchers to quantify the benefits of self-reflection, query rewriting, and corrective retrieval mechanisms using objective evaluation metrics such as faithfulness, answer relevancy, context precision, and latency.",
+    "expected_source": "RAG Evaluation Studies",
+    "topic": "Auto-RAG",
+    "difficulty": "easy"
+  }
+  ,
+  {
+    "id": "q041",
+    "question": "What is hallucination in retrieval-augmented generation systems?",
+    "ground_truth": "Hallucination occurs when a language model generates information that is unsupported, fabricated, or inconsistent with the retrieved evidence or known facts.",
+    "expected_source": "Survey on LLM Hallucinations",
+    "topic": "faithfulness",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q042",
+    "question": "Why can a retrieved context still lead to hallucinated answers?",
+    "ground_truth": "Hallucinations can still occur even with retrieved context if the model misinterprets the evidence, overgeneralizes from incomplete information, or generates unsupported claims beyond the retrieved content.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q043",
+    "question": "What is claim verification in faithfulness evaluation?",
+    "ground_truth": "Claim verification is the process of checking whether statements in a generated answer are supported by the retrieved context or trusted evidence sources.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q044",
+    "question": "How does RAGAS measure faithfulness?",
+    "ground_truth": "RAGAS measures faithfulness by extracting claims from generated answers and evaluating whether those claims are supported by the retrieved context.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q045",
+    "question": "What is an unsupported claim in a generated answer?",
+    "ground_truth": "An unsupported claim is a statement that cannot be verified using the retrieved context and therefore may represent a hallucination or factual error.",
+    "expected_source": "Faithfulness Evaluation Research",
+    "topic": "faithfulness",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q046",
+    "question": "Why is faithfulness important in academic question answering systems?",
+    "ground_truth": "Academic question answering systems require faithfulness because users expect answers to be supported by evidence from scholarly sources rather than generated from unsupported model assumptions.",
+    "expected_source": "Academic QA Research",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q047",
+    "question": "How can retrieved evidence be used to reduce hallucinations?",
+    "ground_truth": "Retrieved evidence constrains generation by providing factual grounding, allowing the model to generate answers based on verifiable information rather than relying solely on parametric knowledge.",
+    "expected_source": "RAG paper (Lewis et al., 2020)",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q048",
+    "question": "What is evidence grounding in retrieval-augmented generation?",
+    "ground_truth": "Evidence grounding refers to the process of ensuring that generated statements are directly supported by retrieved documents or external evidence sources.",
+    "expected_source": "Grounded Generation Research",
+    "topic": "faithfulness",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q049",
+    "question": "Can an answer be relevant but not faithful?",
+    "ground_truth": "Yes. An answer may appear relevant to a question while still containing unsupported or incorrect statements that are not grounded in the retrieved context.",
+    "expected_source": "RAGAS paper (Es et al., 2023)",
+    "topic": "faithfulness",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q050",
+    "question": "What is the relationship between faithfulness and factual correctness?",
+    "ground_truth": "Faithfulness evaluates whether an answer is supported by the provided context, while factual correctness evaluates whether the answer is objectively true. An answer may be faithful to incorrect context or factually correct without being supported by the retrieved evidence.",
+    "expected_source": "Evaluation of Generative Systems Research",
+    "topic": "faithfulness",
+    "difficulty": "hard"
+  }
 ]
