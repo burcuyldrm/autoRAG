@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-06-21T20:16:58",
+  "benchmark": "threshold_experiment",
+  "n_questions": 10,
+  "thresholds_tested": [
+    0.6,
+    0.75,
+    0.85
+  ],
+  "experiments": [
+    {
+      "experiment_name": "threshold_0.6",
+      "experiment_type": "threshold",
+      "timestamp": "2026-06-21T20:16:58",
+      "n_questions": 10,
+      "grade_threshold": 0.6,
+      "retriever_type": "hybrid",
+      "top_k": 5,
+      "avg_latency_seconds": 95.075,
+      "avg_rewrite_count": 0.2,
+      "rewrite_rate": 0.2,
+      "avg_grade_confidence": 0.717,
+      "faithfulness": 0.2406,
+      "answer_relevancy": 0.8146,
+      "context_precision": 0.04,
+      "context_recall": 0.35
+    },
+    {
+      "experiment_name": "threshold_0.75",
+      "experiment_type": "threshold",
+      "timestamp": "2026-06-21T20:16:58",
+      "n_questions": 10,
+      "grade_threshold": 0.75,
+      "retriever_type": "hybrid",
+      "top_k": 5,
+      "avg_latency_seconds": 176.556,
+      "avg_rewrite_count": 2.0,
+      "rewrite_rate": 1.0,
+      "avg_grade_confidence": 0.455,
+      "faithfulness": 0.2085,
+      "answer_relevancy": 0.8104,
+      "context_precision": 0.04,
+      "context_recall": 0.3167
+    },
+    {
+      "experiment_name": "threshold_0.85",
+      "experiment_type": "threshold",
+      "timestamp": "2026-06-21T20:16:58",
+      "n_questions": 10,
+      "grade_threshold": 0.85,
+      "retriever_type": "hybrid",
+      "top_k": 5,
+      "avg_latency_seconds": 174.411,
+      "avg_rewrite_count": 2.0,
+      "rewrite_rate": 1.0,
+      "avg_grade_confidence": 0.455,
+      "faithfulness": 0.2085,
+      "answer_relevancy": 0.8104,
+      "context_precision": 0.04,
+      "context_recall": 0.3167
+    }
+  ]
+}
